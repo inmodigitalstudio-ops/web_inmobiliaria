@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Inmobiliaria Ejemplo</title>
+  <style>
+    body { font-family: Arial; margin: 20px; }
+    .card { border: 1px solid #ccc; padding: 10px; margin: 10px; border-radius: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Pisos en venta / alquiler</h1>
+  <input id="busqueda" placeholder="Buscar por referencia...">
+  <button onclick="buscar()">Buscar</button>
+  <div id="listado"></div>
+
+<script>
+const URL_CSV = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTfVUPzfsgHCzSnNbTuwQyFIZwukG6Xs0PIXWmplnf--DxzIaREs1658Qo-tnwx4FqHOfRMuxcpNjl-/pubhtml?gid=0&single=true';
+
+async function cargarDatos() {
+  const res = await fetch(URL_CSV);
+  const text = await res.text();
+  const filas = text.split('\n').map(l => l.split(','));
+  const headers = filas.shift();
+  const datos = filas.map(f => Object.fromEntries(f.map((v,i)=>[headers[i],v])));
+  return datos;
+}
+
+let pisos = [];
+cargarDatos().then(data => { pisos = data; mostrarTodos(); });
+
+function mostrarTodos() {
+  const cont = document.getElementById('listado');
+  cont.innerHTML = '';
+  pisos.forEach(p => cont.innerHTML += crearTarjeta(p));
+}
+
+function buscar() {
+  const ref = document.getElementById('busqueda').value.trim().toLowerCase();
+  const cont = document.getElementById('listado');
+  cont.innerHTML = '';
+  const filtrados = pisos.filter(p => p.ref.toLowerCase().includes(ref));
+  if (filtrados.length === 0) cont.innerHTML = '<p>No se encontró ningún piso.</p>';
+  else filtrados.forEach(p => cont.innerHTML += crearTarjeta(p));
+}
+
+function crearTarjeta(p) {
+  return `
+    <div class="card">
+      <h3>${p.ref} - ${p.titulo}</h3>
+      <p>${p.descripcion}</p>
+      <strong>${p.precio}</strong>
+      <p>${p.metros} m² | ${p.habitaciones} hab</p>
+      ${p.fotos ? `<img src="${p.fotos.split('|')[0]}" width="200">` : ''}
+    </div>`;
+}
+</script>
+</body>
+</html>
