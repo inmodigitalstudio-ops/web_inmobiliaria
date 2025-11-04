@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>InmoConecta</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>InmoConecta - Conectando Hogares, Uniendo Futuros</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   <style>
@@ -15,39 +15,55 @@
     }
   </style>
 </head>
+
 <body class="text-gray-800">
-  
-  <!-- Encabezado -->
-  <header class="bg-white shadow-md sticky top-0 z-50">
-    <div class="container mx-auto flex items-center justify-between px-6 py-4">
-      <div class="flex items-center space-x-3">
-        <img src="inmoconecta-logo.png" alt="InmoConecta" class="h-20 md:h-24 w-auto">
-        <h1 class="text-2xl font-bold text-green-700">InmoConecta</h1>
+
+  <!-- HEADER -->
+  <header class="bg-white shadow-md sticky top-0 z-50 py-4">
+    <div class="container mx-auto flex flex-col md:flex-row items-center justify-between px-6 space-y-3 md:space-y-0">
+      <div class="flex items-center space-x-4">
+        <img src="LOGO_INMOCONECTA.png" alt="InmoConecta" class="h-24 md:h-28 w-auto drop-shadow-lg">
+        <h1 class="text-3xl font-extrabold text-green-700 tracking-tight">InmoConecta</h1>
       </div>
       <input id="search" type="text" placeholder="Buscar por referencia o palabra clave..." 
-        class="border border-gray-300 rounded-lg px-4 py-2 w-80 focus:ring focus:ring-green-200 outline-none">
+        class="border border-gray-300 rounded-xl px-4 py-2 w-full md:w-96 focus:ring focus:ring-green-300 outline-none transition">
     </div>
   </header>
 
-  <!-- Listado de Propiedades -->
+  <!-- CONTENIDO PRINCIPAL -->
   <main class="container mx-auto px-6 py-10">
     <h2 class="text-3xl font-semibold text-gray-800 mb-8 text-center">Propiedades disponibles</h2>
+    <div id="mensaje" class="text-center text-gray-500 mb-4"></div>
     <div id="listado" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
   </main>
 
-  <!-- Pie de página -->
+  <!-- FOOTER -->
   <footer class="bg-gray-800 text-white py-6 text-center">
     <p>&copy; 2025 InmoConecta - Conectando Hogares, Uniendo Futuros</p>
   </footer>
 
   <script>
-    const sheetURL = "TU_URL_AQUI"; // <-- pega aquí tu URL publicada en CSV
+    const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTfVUPzfsgHCzSnNbTuwQyFIZwukG6Xs0PIXWmplnf--DxzIaREs1658Qo-tnwx4FqHOfRMuxcpNjl-/pub?gid=0&single=true&output=csv";
 
     async function cargarDatos() {
-      const response = await fetch(sheetURL);
-      const csvData = await response.text();
-      const parsed = Papa.parse(csvData, { header: true });
-      mostrarPropiedades(parsed.data);
+      const mensaje = document.getElementById("mensaje");
+      mensaje.innerHTML = "⏳ Cargando propiedades...";
+      try {
+        const response = await fetch(sheetURL);
+        if (!response.ok) throw new Error("No se pudo acceder al documento de Google Sheets.");
+        const csvData = await response.text();
+        const parsed = Papa.parse(csvData, { header: true });
+        const datos = parsed.data.filter(item => item.ref && item.titulo);
+        if (datos.length === 0) {
+          mensaje.innerHTML = "⚠️ No hay propiedades disponibles en este momento.";
+        } else {
+          mensaje.innerHTML = "";
+          mostrarPropiedades(datos);
+        }
+      } catch (error) {
+        mensaje.innerHTML = "❌ Error al cargar los datos. Verifica el enlace del Google Sheets o la conexión.";
+        console.error("Error:", error);
+      }
     }
 
     function mostrarPropiedades(datos) {
@@ -55,19 +71,18 @@
       contenedor.innerHTML = "";
 
       datos.forEach(item => {
-        if (!item.ref) return; // ignora filas vacías
-
-        // Procesar imágenes (una o varias)
+        // Procesar imágenes
         const imagenes = item.fotos ? item.fotos.split(",").map(url => url.trim()) : [];
         const primeraImagen = imagenes[0] || "https://via.placeholder.com/400x300?text=Sin+Imagen";
 
-        // Crear tarjeta
         const card = document.createElement("div");
         card.className = "bg-white shadow-lg rounded-2xl overflow-hidden fade-in hover:shadow-2xl transition";
         card.innerHTML = `
           <div class="relative">
             <img src="${primeraImagen}" alt="${item.titulo}" class="w-full h-56 object-cover">
-            ${item.estado?.toLowerCase() === "cerrado" ? `<span class="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded">Cerrado</span>` : ""}
+            ${item.estado?.toLowerCase() === "cerrado" 
+              ? `<span class='absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded'>Cerrado</span>` 
+              : ""}
           </div>
           <div class="p-5">
             <h3 class="text-xl font-bold mb-2 text-green-700">${item.titulo || "Propiedad"}</h3>
@@ -85,12 +100,18 @@
       });
     }
 
-    // Buscador dinámico
+    // 🔍 Buscador
     document.getElementById("search").addEventListener("input", e => {
       const term = e.target.value.toLowerCase();
+      let visible = 0;
       document.querySelectorAll("#listado > div").forEach(card => {
-        card.style.display = card.textContent.toLowerCase().includes(term) ? "" : "none";
+        const show = card.textContent.toLowerCase().includes(term);
+        card.style.display = show ? "" : "none";
+        if (show) visible++;
       });
+      document.getElementById("mensaje").textContent = visible === 0 && term 
+        ? "🔎 No se encontraron resultados para tu búsqueda." 
+        : "";
     });
 
     cargarDatos();
