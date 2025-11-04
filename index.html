@@ -1,104 +1,91 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>InmoConecta | Conectando Hogares, Uniendo Futuros</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/scrollreveal"></script>
-  <link rel="icon" type="image/png" href="inmoconecta-logo.png" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>InmoConecta</title>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
   <style>
-    body {
-      background-color: #f8fafc;
-      font-family: 'Poppins', sans-serif;
+    body { background-color: #f9fafb; }
+    .fade-in { animation: fadeIn 0.6s ease-in-out; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-    .fade-in { opacity: 0; transform: translateY(30px); transition: all 0.8s ease; }
-    .fade-in.visible { opacity: 1; transform: translateY(0); }
   </style>
 </head>
-
 <body class="text-gray-800">
-  <!-- HEADER -->
-  <header class="bg-white shadow-md py-4 sticky top-0 z-50">
-    <div class="max-w-6xl mx-auto flex items-center justify-between px-4">
-      <div class="flex items-center gap-3">
-        <img src="inmoconecta-logo.png" alt="InmoConecta Logo" class="h-12 w-auto animate-bounce" />
+  
+  <!-- Encabezado -->
+  <header class="bg-white shadow-md sticky top-0 z-50">
+    <div class="container mx-auto flex items-center justify-between px-6 py-4">
+      <div class="flex items-center space-x-3">
+        <img src="LOGO_INMOCONECTA.png" alt="InmoConecta" class="h-12">
+        <h1 class="text-2xl font-bold text-green-700">InmoConecta</h1>
       </div>
-      <h1 class="text-2xl font-bold text-green-700">InmoConecta</h1>
+      <input id="search" type="text" placeholder="Buscar por referencia o palabra clave..." 
+        class="border border-gray-300 rounded-lg px-4 py-2 w-80 focus:ring focus:ring-green-200 outline-none">
     </div>
   </header>
 
-  <!-- HERO -->
-  <section class="text-center bg-gradient-to-r from-green-100 to-blue-100 py-12 mb-8">
-    <h2 class="text-3xl font-bold text-green-800">Conectando Hogares, Uniendo Futuros</h2>
-    <p class="text-gray-700 mt-2">Explora nuestras propiedades en venta y alquiler, siempre actualizadas.</p>
-  </section>
-
-  <!-- BUSCADOR -->
-  <main class="max-w-6xl mx-auto p-6">
-    <input id="search" type="text" placeholder="🔍 Buscar por referencia..." class="w-full border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-green-400 mb-6" />
-    
-    <div id="listado" class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3"></div>
+  <!-- Listado de Propiedades -->
+  <main class="container mx-auto px-6 py-10">
+    <h2 class="text-3xl font-semibold text-gray-800 mb-8 text-center">Propiedades disponibles</h2>
+    <div id="listado" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
   </main>
 
-  <!-- FOOTER -->
-  <footer class="bg-white text-center py-6 mt-16 shadow-inner">
-    <p class="text-gray-600">© 2025 InmoConecta - Todos los derechos reservados.</p>
+  <!-- Pie de página -->
+  <footer class="bg-gray-800 text-white py-6 text-center">
+    <p>&copy; 2025 InmoConecta - Conectando Hogares, Uniendo Futuros</p>
   </footer>
 
-  <!-- SCRIPT -->
   <script>
-    const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTfVUPzfsgHCzSnNbTuwQyFIZwukG6Xs0PIXWmplnf--DxzIaREs1658Qo-tnwx4FqHOfRMuxcpNjl-/pub?gid=0&single=true&output=csv";
+    const sheetURL = "TU_URL_AQUI"; // <-- pega aquí tu URL publicada en CSV
 
     async function cargarDatos() {
-      const res = await fetch(SHEET_URL);
-      const texto = await res.text();
-      const filas = texto.trim().split("\n").map(f => f.split(","));
-      const [headers, ...data] = filas;
-      const listado = document.getElementById("listado");
-      listado.innerHTML = "";
+      const response = await fetch(sheetURL);
+      const csvData = await response.text();
+      const parsed = Papa.parse(csvData, { header: true });
+      mostrarPropiedades(parsed.data);
+    }
 
-      data.forEach((fila, index) => {
-        const item = Object.fromEntries(headers.map((h, i) => [h.trim(), fila[i]?.replace(/\"/g, "").trim()]));
-        const img = getValidImageURL(item.imagen);
+    function mostrarPropiedades(datos) {
+      const contenedor = document.getElementById("listado");
+      contenedor.innerHTML = "";
+
+      datos.forEach(item => {
+        if (!item.ref) return; // ignora filas vacías
+
+        // Procesar imágenes (una o varias)
+        const imagenes = item.fotos ? item.fotos.split(",").map(url => url.trim()) : [];
+        const primeraImagen = imagenes[0] || "https://via.placeholder.com/400x300?text=Sin+Imagen";
+
+        // Crear tarjeta
         const card = document.createElement("div");
-        card.className = "bg-white rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-500 fade-in";
+        card.className = "bg-white shadow-lg rounded-2xl overflow-hidden fade-in hover:shadow-2xl transition";
         card.innerHTML = `
-          <img src="${img}" alt="${item.referencia}" class="w-full h-56 object-cover rounded-t-2xl">
-          <div class="p-4">
-            <h3 class="text-lg font-semibold text-green-700">${item.ubicacion}</h3>
-            <p class="text-gray-600 text-sm mb-2">${item.tipo} - Ref: ${item.referencia}</p>
-            <p class="text-blue-700 font-bold text-xl mb-2">${item.precio} €</p>
-            <p class="text-gray-700 text-sm">${item.descripcion}</p>
+          <div class="relative">
+            <img src="${primeraImagen}" alt="${item.titulo}" class="w-full h-56 object-cover">
+            ${item.estado?.toLowerCase() === "cerrado" ? `<span class="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded">Cerrado</span>` : ""}
+          </div>
+          <div class="p-5">
+            <h3 class="text-xl font-bold mb-2 text-green-700">${item.titulo || "Propiedad"}</h3>
+            <p class="text-gray-600 text-sm mb-2">${item.tipo || ""} - Ref: ${item.ref || ""}</p>
+            <p class="text-gray-800 font-semibold mb-2">${item.precio || ""}</p>
+            <p class="text-gray-600 text-sm mb-1">${item.direccion || ""}</p>
+            <p class="text-gray-600 text-sm mb-4">${item.descripcion || ""}</p>
+            <div class="flex justify-between text-gray-500 text-sm">
+              <span>${item.metros || ""} m²</span>
+              <span>${item.habitaciones || ""} hab.</span>
+            </div>
           </div>
         `;
-        listado.appendChild(card);
-      });
-
-      revealAnimations();
-    }
-
-    function getValidImageURL(url) {
-      if (!url) return "https://via.placeholder.com/400x300?text=Sin+imagen";
-      if (url.includes("drive.google.com")) {
-        const match = url.match(/[-\w]{25,}/);
-        if (match) return `https://drive.google.com/uc?export=view&id=${match[0]}`;
-      }
-      if (url.match(/\.(jpg|jpeg|png|webp)$/i)) return url;
-      return `https://images.weserv.nl/?url=${encodeURIComponent(url)}`;
-    }
-
-    function revealAnimations() {
-      ScrollReveal().reveal('.fade-in', { 
-        delay: 100, 
-        distance: '30px', 
-        duration: 800, 
-        easing: 'ease-out',
-        origin: 'bottom',
-        interval: 100 
+        contenedor.appendChild(card);
       });
     }
 
+    // Buscador dinámico
     document.getElementById("search").addEventListener("input", e => {
       const term = e.target.value.toLowerCase();
       document.querySelectorAll("#listado > div").forEach(card => {
