@@ -3,168 +3,107 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>InmoConecta - Portal Inmobiliario</title>
-
-  <!-- Tailwind CSS -->
+  <title>InmoConecta | Conectando Hogares, Uniendo Futuros</title>
   <script src="https://cdn.tailwindcss.com"></script>
-
+  <script src="https://unpkg.com/scrollreveal"></script>
+  <link rel="icon" type="image/png" href="inmoconecta-logo.png" />
   <style>
     body {
-      background: #f8fafc;
-      font-family: 'Inter', system-ui, sans-serif;
+      background-color: #f8fafc;
+      font-family: 'Poppins', sans-serif;
     }
-
-    .card {
-      transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-    .card:hover {
-      transform: translateY(-6px);
-      box-shadow: 0 12px 25px rgba(0, 0, 0, 0.1);
-    }
-
-    .gradient {
-      background: linear-gradient(135deg, #2563eb, #1d4ed8);
-      color: white;
-    }
-
-    .btn {
-      transition: all 0.2s ease-in-out;
-    }
-    .btn:hover {
-      opacity: 0.9;
-      transform: scale(1.02);
-    }
+    .fade-in { opacity: 0; transform: translateY(30px); transition: all 0.8s ease; }
+    .fade-in.visible { opacity: 1; transform: translateY(0); }
   </style>
 </head>
-<body>
 
-  <!-- Header -->
-  <header class="gradient py-8 shadow-lg">
-    <div class="max-w-7xl mx-auto px-6 text-center">
-      <h1 class="text-4xl font-bold mb-2">🏠 InmoConecta</h1>
-      <p class="text-lg text-blue-100">Tu portal inmobiliario profesional</p>
+<body class="text-gray-800">
+  <!-- HEADER -->
+  <header class="bg-white shadow-md py-4 sticky top-0 z-50">
+    <div class="max-w-6xl mx-auto flex items-center justify-between px-4">
+      <div class="flex items-center gap-3">
+        <img src="inmoconecta-logo.png" alt="InmoConecta Logo" class="h-12 w-auto animate-bounce" />
+      </div>
+      <h1 class="text-2xl font-bold text-green-700">InmoConecta</h1>
     </div>
   </header>
 
-  <!-- Filtros -->
-  <section class="max-w-7xl mx-auto px-6 py-10">
-    <div class="bg-white shadow-md rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-4">
-      <input id="search" type="text" placeholder="🔍 Buscar por referencia o ubicación..."
-             class="w-full md:w-1/2 border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none" />
-
-      <select id="filter-tipo"
-              class="border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 outline-none">
-        <option value="todos">Todos los tipos</option>
-        <option value="venta">Venta</option>
-        <option value="alquiler">Alquiler</option>
-      </select>
-
-      <button id="clear"
-              class="btn bg-gray-700 text-white px-4 py-2 rounded-lg shadow hover:bg-gray-800">
-        Limpiar filtros
-      </button>
-    </div>
+  <!-- HERO -->
+  <section class="text-center bg-gradient-to-r from-green-100 to-blue-100 py-12 mb-8">
+    <h2 class="text-3xl font-bold text-green-800">Conectando Hogares, Uniendo Futuros</h2>
+    <p class="text-gray-700 mt-2">Explora nuestras propiedades en venta y alquiler, siempre actualizadas.</p>
   </section>
 
-  <!-- Propiedades -->
-  <main class="max-w-7xl mx-auto px-6 pb-16">
+  <!-- BUSCADOR -->
+  <main class="max-w-6xl mx-auto p-6">
+    <input id="search" type="text" placeholder="🔍 Buscar por referencia..." class="w-full border p-3 rounded-lg shadow-sm focus:ring-2 focus:ring-green-400 mb-6" />
+    
     <div id="listado" class="grid gap-8 sm:grid-cols-2 lg:grid-cols-3"></div>
-    <p id="empty" class="text-center text-gray-500 mt-10 hidden">No se encontraron propiedades 😔</p>
   </main>
 
-  <!-- Footer -->
-  <footer class="bg-white border-t py-8">
-    <div class="max-w-7xl mx-auto px-6 text-center text-gray-500 text-sm">
-      © 2025 InmoConecta — Portal sincronizado automáticamente con Google Sheets
-    </div>
+  <!-- FOOTER -->
+  <footer class="bg-white text-center py-6 mt-16 shadow-inner">
+    <p class="text-gray-600">© 2025 InmoConecta - Todos los derechos reservados.</p>
   </footer>
 
+  <!-- SCRIPT -->
   <script>
-    // 🔗 Tu hoja conectada a Google Sheets (en formato CSV)
     const SHEET_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTfVUPzfsgHCzSnNbTuwQyFIZwukG6Xs0PIXWmplnf--DxzIaREs1658Qo-tnwx4FqHOfRMuxcpNjl-/pub?gid=0&single=true&output=csv";
 
-    const listado = document.getElementById("listado");
-    const empty = document.getElementById("empty");
-    let propiedades = [];
-
     async function cargarDatos() {
-      try {
-        const res = await fetch(SHEET_URL);
-        const texto = await res.text();
-        const filas = texto.trim().split("\n").map(f => f.split(","));
-        const [headers, ...data] = filas;
-
-        propiedades = data.map(fila => {
-          const obj = {};
-          headers.forEach((h, i) => {
-            obj[h.trim()] = fila[i]?.replace(/\"/g, "").trim();
-          });
-          return obj;
-        });
-
-        mostrarPropiedades(propiedades);
-      } catch (err) {
-        console.error("Error al cargar la hoja:", err);
-        empty.classList.remove("hidden");
-        empty.textContent = "⚠️ Error al cargar los datos de Google Sheets";
-      }
-    }
-
-    function mostrarPropiedades(lista) {
+      const res = await fetch(SHEET_URL);
+      const texto = await res.text();
+      const filas = texto.trim().split("\n").map(f => f.split(","));
+      const [headers, ...data] = filas;
+      const listado = document.getElementById("listado");
       listado.innerHTML = "";
-      if (lista.length === 0) {
-        empty.classList.remove("hidden");
-        return;
-      }
-      empty.classList.add("hidden");
 
-      lista.forEach(p => {
+      data.forEach((fila, index) => {
+        const item = Object.fromEntries(headers.map((h, i) => [h.trim(), fila[i]?.replace(/\"/g, "").trim()]));
+        const img = getValidImageURL(item.imagen);
         const card = document.createElement("div");
-        card.className = "card bg-white rounded-2xl overflow-hidden shadow-md";
-
+        card.className = "bg-white rounded-2xl shadow-lg hover:shadow-2xl transform hover:-translate-y-1 transition-all duration-500 fade-in";
         card.innerHTML = `
-          <img src="${p.imagen}" alt="${p.referencia}" class="w-full h-56 object-cover">
-          <div class="p-5">
-            <div class="flex justify-between items-center mb-2">
-              <h3 class="text-xl font-semibold">${p.ubicacion}</h3>
-              <span class="text-sm text-gray-500">${p.referencia}</span>
-            </div>
-            <p class="text-blue-600 font-bold text-lg">${p.precio} €</p>
-            <p class="text-gray-600 text-sm mt-2">${p.descripcion}</p>
-            <span class="inline-block mt-3 px-3 py-1 rounded-full text-sm ${
-              p.tipo.toLowerCase() === 'venta'
-                ? 'bg-green-100 text-green-700'
-                : 'bg-yellow-100 text-yellow-700'
-            }">${p.tipo}</span>
+          <img src="${img}" alt="${item.referencia}" class="w-full h-56 object-cover rounded-t-2xl">
+          <div class="p-4">
+            <h3 class="text-lg font-semibold text-green-700">${item.ubicacion}</h3>
+            <p class="text-gray-600 text-sm mb-2">${item.tipo} - Ref: ${item.referencia}</p>
+            <p class="text-blue-700 font-bold text-xl mb-2">${item.precio} €</p>
+            <p class="text-gray-700 text-sm">${item.descripcion}</p>
           </div>
         `;
         listado.appendChild(card);
       });
+
+      revealAnimations();
     }
 
-    // 🔍 Buscador
+    function getValidImageURL(url) {
+      if (!url) return "https://via.placeholder.com/400x300?text=Sin+imagen";
+      if (url.includes("drive.google.com")) {
+        const match = url.match(/[-\w]{25,}/);
+        if (match) return `https://drive.google.com/uc?export=view&id=${match[0]}`;
+      }
+      if (url.match(/\.(jpg|jpeg|png|webp)$/i)) return url;
+      return `https://images.weserv.nl/?url=${encodeURIComponent(url)}`;
+    }
+
+    function revealAnimations() {
+      ScrollReveal().reveal('.fade-in', { 
+        delay: 100, 
+        distance: '30px', 
+        duration: 800, 
+        easing: 'ease-out',
+        origin: 'bottom',
+        interval: 100 
+      });
+    }
+
     document.getElementById("search").addEventListener("input", e => {
       const term = e.target.value.toLowerCase();
-      const filtradas = propiedades.filter(p =>
-        Object.values(p).some(v => v.toLowerCase().includes(term))
-      );
-      mostrarPropiedades(filtradas);
-    });
-
-    // 🏷️ Filtro por tipo
-    document.getElementById("filter-tipo").addEventListener("change", e => {
-      const tipo = e.target.value;
-      const filtradas = tipo === "todos"
-        ? propiedades
-        : propiedades.filter(p => p.tipo.toLowerCase() === tipo);
-      mostrarPropiedades(filtradas);
-    });
-
-    // ♻️ Limpiar filtros
-    document.getElementById("clear").addEventListener("click", () => {
-      document.getElementById("search").value = "";
-      document.getElementById("filter-tipo").value = "todos";
-      mostrarPropiedades(propiedades);
+      document.querySelectorAll("#listado > div").forEach(card => {
+        card.style.display = card.textContent.toLowerCase().includes(term) ? "" : "none";
+      });
     });
 
     cargarDatos();
