@@ -45,76 +45,45 @@
   <script>
     const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTfVUPzfsgHCzSnNbTuwQyFIZwukG6Xs0PIXWmplnf--DxzIaREs1658Qo-tnwx4FqHOfRMuxcpNjl-/pub?gid=0&single=true&output=csv";
 
-    async function cargarDatos() {
-      const mensaje = document.getElementById("mensaje");
-      mensaje.innerHTML = "⏳ Cargando propiedades...";
-      try {
-        const response = await fetch(sheetURL);
-        if (!response.ok) throw new Error("No se pudo acceder al documento de Google Sheets.");
-        const csvData = await response.text();
-        const parsed = Papa.parse(csvData, { header: true });
-        const datos = parsed.data.filter(item => item.ref && item.titulo);
-        if (datos.length === 0) {
-          mensaje.innerHTML = "⚠️ No hay propiedades disponibles en este momento.";
-        } else {
-          mensaje.innerHTML = "";
-          mostrarPropiedades(datos);
-        }
-      } catch (error) {
-        mensaje.innerHTML = "❌ Error al cargar los datos. Verifica el enlace del Google Sheets o la conexión.";
-        console.error("Error:", error);
-      }
+   let propiedades = []; // ✅ guardamos aquí todas las propiedades
+
+async function cargarDatos() {
+  const mensaje = document.getElementById("mensaje");
+  mensaje.innerHTML = "⏳ Cargando propiedades...";
+  try {
+    const response = await fetch(sheetURL);
+    if (!response.ok) throw new Error("No se pudo acceder al documento de Google Sheets.");
+    const csvData = await response.text();
+    const parsed = Papa.parse(csvData, { header: true });
+    propiedades = parsed.data.filter(item => item.ref && item.titulo);
+    if (propiedades.length === 0) {
+      mensaje.innerHTML = "⚠️ No hay propiedades disponibles en este momento.";
+    } else {
+      mensaje.innerHTML = "";
+      mostrarPropiedades(propiedades);
     }
+  } catch (error) {
+    mensaje.innerHTML = "❌ Error al cargar los datos. Verifica el enlace del Google Sheets o la conexión.";
+    console.error("Error:", error);
+  }
+}
 
-    function mostrarPropiedades(datos) {
-      const contenedor = document.getElementById("listado");
-      contenedor.innerHTML = "";
+// 🔍 NUEVO BUSCADOR (más preciso)
+document.getElementById("search").addEventListener("input", e => {
+  const term = e.target.value.toLowerCase().trim();
+  const resultados = propiedades.filter(item => 
+    (item.ref && item.ref.toLowerCase().includes(term)) ||
+    (item.titulo && item.titulo.toLowerCase().includes(term)) ||
+    (item.descripcion && item.descripcion.toLowerCase().includes(term)) ||
+    (item.tipo && item.tipo.toLowerCase().includes(term)) ||
+    (item.direccion && item.direccion.toLowerCase().includes(term))
+  );
+  mostrarPropiedades(resultados);
+  document.getElementById("mensaje").textContent = 
+    resultados.length === 0 && term ? "🔎 No se encontraron resultados para tu búsqueda." : "";
+});
 
-      datos.forEach(item => {
-        // Procesar imágenes
-        const imagenes = item.fotos ? item.fotos.split(",").map(url => url.trim()) : [];
-        const primeraImagen = imagenes[0] || "https://via.placeholder.com/400x300?text=Sin+Imagen";
-
-        const card = document.createElement("div");
-        card.className = "bg-white shadow-lg rounded-2xl overflow-hidden fade-in hover:shadow-2xl transition";
-        card.innerHTML = `
-          <div class="relative">
-            <img src="${primeraImagen}" alt="${item.titulo}" class="w-full h-56 object-cover">
-            ${item.estado?.toLowerCase() === "cerrado" 
-              ? `<span class='absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded'>Cerrado</span>` 
-              : ""}
-          </div>
-          <div class="p-5">
-            <h3 class="text-xl font-bold mb-2 text-green-700">${item.titulo || "Propiedad"}</h3>
-            <p class="text-gray-600 text-sm mb-2">${item.tipo || ""} - Ref: ${item.ref || ""}</p>
-            <p class="text-gray-800 font-semibold mb-2">${item.precio || ""}</p>
-            <p class="text-gray-600 text-sm mb-1">${item.direccion || ""}</p>
-            <p class="text-gray-600 text-sm mb-4">${item.descripcion || ""}</p>
-            <div class="flex justify-between text-gray-500 text-sm">
-              <span>${item.metros || ""} m²</span>
-              <span>${item.habitaciones || ""} hab.</span>
-            </div>
-          </div>
-        `;
-        contenedor.appendChild(card);
-      });
-    }
-
-    // 🔍 Buscador
-    document.getElementById("search").addEventListener("input", e => {
-      const term = e.target.value.toLowerCase();
-      let visible = 0;
-      document.querySelectorAll("#listado > div").forEach(card => {
-        const show = card.textContent.toLowerCase().includes(term);
-        card.style.display = show ? "" : "none";
-        if (show) visible++;
-      });
-      document.getElementById("mensaje").textContent = visible === 0 && term 
-        ? "🔎 No se encontraron resultados para tu búsqueda." 
-        : "";
-    });
-
-    cargarDatos();
+cargarDatos();
   </script>
 </body>
 </html>
