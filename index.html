@@ -68,21 +68,23 @@ async function cargarDatos() {
   }
 }
 
-// 🔍 NUEVO BUSCADOR (más preciso)
+// 🔍 BUSCADOR UNIVERSAL (funciona con cualquier nombre de columna)
 document.getElementById("search").addEventListener("input", e => {
   const term = e.target.value.toLowerCase().trim();
-  const resultados = propiedades.filter(item => 
-    (item.ref && item.ref.toLowerCase().includes(term)) ||
-    (item.titulo && item.titulo.toLowerCase().includes(term)) ||
-    (item.descripcion && item.descripcion.toLowerCase().includes(term)) ||
-    (item.tipo && item.tipo.toLowerCase().includes(term)) ||
-    (item.direccion && item.direccion.toLowerCase().includes(term))
-  );
-  mostrarPropiedades(resultados);
-  document.getElementById("mensaje").textContent = 
-    resultados.length === 0 && term ? "🔎 No se encontraron resultados para tu búsqueda." : "";
-});
 
+  const resultados = propiedades.filter(item =>
+    Object.values(item).some(v =>
+      v && v.toString().toLowerCase().includes(term)
+    )
+  );
+
+  mostrarPropiedades(resultados);
+
+  document.getElementById("mensaje").textContent =
+    resultados.length === 0 && term
+      ? "🔎 No se encontraron resultados para tu búsqueda."
+      : "";
+});
 cargarDatos();
   </script>
 </body>
