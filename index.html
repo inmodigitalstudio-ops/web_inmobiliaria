@@ -1,124 +1,1098 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>InmoConecta - Conectando Hogares, Uniendo Futuros</title>
-  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-  <script src="https://cdn.jsdelivr.net/npm/papaparse@5.3.2/papaparse.min.js"></script>
-  <style>
-    body { background-color: #f9fafb; }
-    .fade-in { animation: fadeIn 0.6s ease-in-out; }
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(10px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InmoDigitalStudio CMS | Gestión y Asesoría de Élite</title>
+    
+    <!-- Carga de Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Configuración de Colores de Alto Contraste y Tipografía -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');
+        
+        :root {
+            /* Colores de Alto Contraste */
+            --color-primary: #0D47A1; /* Azul Profundo (Deep Blue) */
+            --color-secondary: #00A389; /* Teal (Acento Dinámico) */
+            --color-dark: #1F2937; /* Gris Oscuro */
+        }
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f7f9fb; /* Fondo muy claro */
+            color: var(--color-dark);
+        }
+        .text-primary { color: var(--color-primary); }
+        .bg-primary { background-color: var(--color-primary); }
+        .hover\:bg-primary:hover { background-color: #0c3d8a; } /* Darker Primary */
+        .bg-secondary { background-color: var(--color-secondary); }
+        .hover\:bg-secondary:hover { background-color: #008775; } /* Darker Secondary */
+
+        /* Animación para el botón de WhatsApp */
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-8px); }
+        }
+        .animate-bounce { animation: bounce 2s infinite ease-in-out; }
+    </style>
 </head>
 
-<body class="text-gray-800">
-
-  <!-- HEADER -->
-  <header class="bg-white shadow-md sticky top-0 z-50 py-4">
-    <div class="container mx-auto flex flex-col md:flex-row items-center justify-between px-6 space-y-3 md:space-y-0">
-      <div class="flex items-center space-x-4">
-        <img src="inmoconecta-logo.png" alt="InmoConecta" class="h-24 md:h-28 w-auto drop-shadow-lg">
-        <h1 class="text-3xl font-extrabold text-green-700 tracking-tight">InmoConecta</h1>
-      </div>
-      <input id="search" type="text" placeholder="Buscar por referencia o palabra clave..." 
-        class="border border-gray-300 rounded-xl px-4 py-2 w-full md:w-96 focus:ring focus:ring-green-300 outline-none transition">
-    </div>
-  </header>
-
-  <!-- CONTENIDO PRINCIPAL -->
-  <main class="container mx-auto px-6 py-10">
-    <h2 class="text-3xl font-semibold text-gray-800 mb-8 text-center">Propiedades disponibles</h2>
-    <div id="mensaje" class="text-center text-gray-500 mb-4"></div>
-    <div id="listado" class="grid md:grid-cols-2 lg:grid-cols-3 gap-8"></div>
-  </main>
-
-  <!-- FOOTER -->
-  <footer class="bg-gray-800 text-white py-6 text-center">
-    <p>&copy; 2025 InmoConecta - Conectando Hogares, Uniendo Futuros</p>
-  </footer>
-
-  <script>
-    // 🟢 ENLACE A TU GOOGLE SHEETS PUBLICADO COMO CSV
-    const sheetURL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTfVUPzfsgHCzSnNbTuwQyFIZwukG6Xs0PIXWmplnf--DxzIaREs1658Qo-tnwx4FqHOfRMuxcpNjl-/pub?gid=0&single=true&output=csv";
-
-    let propiedades = []; // guardamos aquí todas las propiedades
-
-    async function cargarDatos() {
-      const mensaje = document.getElementById("mensaje");
-      mensaje.innerHTML = "⏳ Cargando propiedades...";
-      try {
-        const response = await fetch(sheetURL);
-        if (!response.ok) throw new Error("No se pudo acceder al documento de Google Sheets.");
-        const csvData = await response.text();
-        const parsed = Papa.parse(csvData, { header: true });
-        propiedades = parsed.data.filter(item => Object.values(item).some(v => v)); // filtramos filas vacías
-        if (propiedades.length === 0) {
-          mensaje.innerHTML = "⚠️ No hay propiedades disponibles en este momento.";
-        } else {
-          mensaje.innerHTML = "";
-          mostrarPropiedades(propiedades);
-        }
-      } catch (error) {
-        mensaje.innerHTML = "❌ Error al cargar los datos. Verifica el enlace del Google Sheets o la conexión.";
-        console.error("Error:", error);
-      }
-    }
-
-    // 🏠 FUNCIÓN PARA MOSTRAR PROPIEDADES EN TARJETAS
-    function mostrarPropiedades(datos) {
-      const contenedor = document.getElementById("listado");
-      contenedor.innerHTML = "";
-
-      datos.forEach(item => {
-        const imagenes = item.fotos ? item.fotos.split(",").map(url => url.trim()) : [];
-        const primeraImagen = imagenes[0] || "https://via.placeholder.com/400x300?text=Sin+Imagen";
-
-        const card = document.createElement("div");
-        card.className = "bg-white shadow-lg rounded-2xl overflow-hidden fade-in hover:shadow-2xl transition";
-        card.innerHTML = `
-          <div class="relative">
-            <img src="${primeraImagen}" alt="${item.titulo || "Propiedad"}" class="w-full h-56 object-cover">
-            ${item.estado?.toLowerCase() === "cerrado" 
-              ? `<span class='absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded'>Cerrado</span>` 
-              : ""}
-          </div>
-          <div class="p-5">
-            <h3 class="text-xl font-bold mb-2 text-green-700">${item.titulo || "Propiedad sin título"}</h3>
-            <p class="text-gray-600 text-sm mb-2">${item.tipo || ""} - Ref: ${item.ref || item.Referencia || item.codigo || "N/A"}</p>
-            <p class="text-gray-800 font-semibold mb-2">${item.precio || ""}</p>
-            <p class="text-gray-600 text-sm mb-1">${item.direccion || ""}</p>
-            <p class="text-gray-600 text-sm mb-4">${item.descripcion || ""}</p>
-            <div class="flex justify-between text-gray-500 text-sm">
-              <span>${item.metros || ""} m²</span>
-              <span>${item.habitaciones || ""} hab.</span>
-            </div>
-          </div>
+<body class="min-h-screen">
+    
+    <!-- ----------------------------------------------------------- -->
+    <!-- JS GLOBAL: HEADER (Se mueve aquí para evitar ReferenceError) -->
+    <!-- ----------------------------------------------------------- -->
+    <script>
+        /**
+         * Genera el HTML del encabezado de navegación.
+         * @param {boolean} isAdmin - Si es verdadero, muestra los enlaces de administración.
+         */
+        const getHeader = (isAdmin) => `
+            <header class="sticky top-0 z-50 bg-white border-b-4 border-primary shadow-lg">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div class="flex justify-between items-center h-20">
+                        <!-- Logo (Click para ir a la vista pública) -->
+                        <!-- showView es una función global definida en el script type="module" -->
+                        <a href="#" onclick="showView('public'); return false;" class="text-2xl font-extrabold tracking-tight text-primary flex items-center group transition duration-300 transform hover:scale-[1.02]">
+                            <svg class="w-6 h-6 mr-2 text-primary group-hover:text-secondary transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"></path></svg>
+                            InmoDigitalStudio
+                        </a>
+                        
+                        <!-- Menú de Navegación -->
+                        <nav class="flex space-x-4 font-medium items-center">
+                            ${isAdmin ? `
+                                <button onclick="showView('public')" class="text-gray-600 hover:text-primary transition duration-150 p-2 rounded-lg">Vista Pública</button>
+                                <button onclick="showView('admin')" class="bg-secondary text-white font-bold px-4 py-2 rounded-full hover:bg-primary transition duration-150 shadow-md transform hover:scale-[1.05]">Panel CMS</button>
+                            ` : `
+                                <a href="#propiedades" class="text-gray-600 hover:text-primary transition duration-150 hover:underline">Propiedades</a>
+                                <a href="#sobre-mi" class="text-gray-600 hover:text-primary transition duration-150 hover:underline">Sobre mí</a>
+                                <a href="#contacto" class="bg-primary text-white font-bold px-4 py-2 rounded-full hover:bg-secondary transition duration-150 shadow-md transform hover:scale-[1.05]">Contacto Experto</a>
+                            `}
+                        </nav>
+                    </div>
+                </div>
+            </header>
         `;
-        contenedor.appendChild(card);
-      });
-    }
+    </script>
+    
+    <!-- ----------------------------------------------------------- -->
+    <!-- FIREBASE INITIALIZATION AND AUTH (Module Script) -->
+    <!-- ----------------------------------------------------------- -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, addDoc, setDoc, updateDoc, deleteDoc, onSnapshot, collection, query, where, getDocs, runTransaction, setLogLevel } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // Configuración de Firebase (proporcionada por el entorno)
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        const firebaseConfig = JSON.parse(typeof __firebase_config !== 'undefined' ? __firebase_config : '{}');
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+        
+        setLogLevel('Debug');
+        
+        let app, db, auth, userId = null;
+        window.properties = []; // Global para almacenar las propiedades
 
-    // 🔍 BUSCADOR UNIVERSAL (funciona con cualquier nombre de columna)
-    document.getElementById("search").addEventListener("input", e => {
-      const term = e.target.value.toLowerCase().trim();
-      const resultados = propiedades.filter(item =>
-        Object.values(item).some(v =>
-          v && v.toString().toLowerCase().includes(term)
-        )
-      );
-      mostrarPropiedades(resultados);
-      document.getElementById("mensaje").textContent =
-        resultados.length === 0 && term
-          ? "🔎 No se encontraron resultados para tu búsqueda."
-          : "";
-    });
+        // --- INICIO DE DATOS DE EJEMPLO (50 PROPIEDADES) ---
+        const andalusiaExamples = [
+            // 4 Propiedades Originales (Actualizadas a Array de Imágenes)
+            {
+                title: "Villa de Lujo en Marbella", location: "Málaga", price: 1850000, rooms: 5, area: 450, type: "Venta",
+                desc: "Espectacular villa moderna con vistas panorámicas al Mediterráneo, piscina infinita y acabados de lujo. Ubicada en la Milla de Oro, ofrece la máxima privacidad y seguridad. Distribución en tres niveles: sótano con gimnasio y cine, planta principal con salón de doble altura y cocina de diseño, y planta superior con suites de invitados y dormitorio principal con terraza privada.",
+                images: ["https://placehold.co/600x400/0D47A1/FFFFFF?text=Principal+Marbella", "https://placehold.co/600x400/1565C0/FFFFFF?text=Piscina+Marbella", "https://placehold.co/600x400/1976D2/FFFFFF?text=Interior+Lujo"], ref: "IDS-MLG001", featured: true, status: "Disponible"
+            },
+            {
+                title: "Apartamento con Terraza en Triana", location: "Sevilla", price: 320000, rooms: 3, area: 110, type: "Venta",
+                desc: "Encantador apartamento reformado en el corazón de Triana, a un paso del río, con gran terraza privada. Combina el encanto sevillano con comodidades modernas. Dispone de tres dormitorios luminosos, dos baños completos, y una cocina totalmente equipada. La terraza es perfecta para cenas al aire libre con vistas a los tejados del barrio.",
+                images: ["https://placehold.co/600x400/00A389/FFFFFF?text=Principal+Triana", "https://placehold.co/600x400/00C853/FFFFFF?text=Terraza+Triana", "https://placehold.co/600x400/00E676/FFFFFF?text=Salón+Luminoso"], ref: "IDS-SEV002", featured: true, status: "Reservada"
+            },
+            {
+                title: "Piso Histórico junto a la Alhambra", location: "Granada", price: 1500, rooms: 2, area: 75, type: "Alquiler",
+                desc: "Piso luminoso en el Albaicín con increíbles vistas a la Alhambra y el Generalife. Ideal para larga estancia. Este inmueble mantiene elementos originales como techos altos y suelos hidráulicos. El salón tiene un balcón con vistas directas al monumento. Totalmente amueblado y listo para entrar a vivir. Incluye gastos de comunidad en el precio.",
+                images: ["https://placehold.co/600x400/D32F2F/FFFFFF?text=Principal+Albaicín", "https://placehold.co/600x400/E53935/FFFFFF?text=Vista+Alhambra", "https://placehold.co/600x400/EF5350/FFFFFF?text=Detalle+Interior"], ref: "IDS-GRN003", featured: false, status: "Disponible"
+            },
+            {
+                title: "Casa Adosada en la Costa de la Luz", location: "Cádiz", price: 245000, rooms: 4, area: 180, type: "Venta",
+                desc: "Adosado familiar en zona tranquila de Chiclana, con piscina comunitaria y cerca de la playa de La Barrosa. La vivienda consta de cuatro dormitorios, dos baños, jardín privado y porche. Recientemente reformado, con placas solares instaladas para mayor eficiencia energética. Una oportunidad perfecta para vivir cerca del mar todo el año.",
+                images: ["https://placehold.co/600x400/FFAB00/1F2937?text=Principal+Cádiz", "https://placehold.co/600x400/FFC107/1F2937?text=Piscina+Comunitaria", "https://placehold.co/600x400/FFCA28/1F2937?text=Jardín+Privado"], ref: "IDS-CAD004", featured: true, status: "Disponible"
+            },
+            // 46 Propiedades Adicionales
+            { title: "Ático de Diseño en Soho", location: "Málaga", price: 580000, rooms: 2, area: 95, type: "Venta", desc: "Exclusivo ático en el centro cultural de Málaga, con terraza de 40m² y vistas urbanas. Ideal para inversión o vida moderna.", images: ["https://placehold.co/600x400/4CAF50/FFFFFF?text=Ático+Soho", "https://placehold.co/600x400/66BB6A/FFFFFF?text=Terraza+Vistas", "https://placehold.co/600x400/81C784/FFFFFF?text=Cocina+Abierta"], ref: "IDS-MLG005", featured: true, status: "Disponible" },
+            { title: "Chalet con Jardín en El Puerto", location: "Cádiz", price: 395000, rooms: 4, area: 220, type: "Venta", desc: "Espacioso chalet con gran jardín y barbacoa, listo para entrar. A 10 minutos de la playa. Perfecto para familias.", images: ["https://placehold.co/600x400/FF5722/FFFFFF?text=Chalet+El+Puerto", "https://placehold.co/600x400/FF7043/FFFFFF?text=Jardín+Barbacoa", "https://placehold.co/600x400/FF8A65/FFFFFF?text=Comedor+Rustico"], ref: "IDS-CAD006", featured: false, status: "Disponible" },
+            { title: "Loft Industrial en Macarena", location: "Sevilla", price: 850, rooms: 1, area: 60, type: "Alquiler", desc: "Estilo neoyorquino en Sevilla. Loft totalmente amueblado con techos altos y grandes ventanales. Comunidad incluida.", images: ["https://placehold.co/600x400/607D8B/FFFFFF?text=Loft+Macarena", "https://placehold.co/600x400/78909C/FFFFFF?text=Detalle+Ventanal", "https://placehold.co/600x400/90A4AE/FFFFFF?text=Dormitorio+Abierto"], ref: "IDS-SEV007", featured: false, status: "Reservada" },
+            { title: "Finca Rústica en La Alpujarra", location: "Granada", price: 210000, rooms: 3, area: 150, type: "Venta", desc: "Auténtica casa de campo andaluza con 5.000m² de terreno, olivos y tranquilidad absoluta. Vistas a la sierra.", images: ["https://placehold.co/600x400/795548/FFFFFF?text=Finca+Alpujarra", "https://placehold.co/600x400/8D6E63/FFFFFF?text=Terreno+Vistas", "https://placehold.co/600x400/A1887F/FFFFFF?text=Chimenea+Salón"], ref: "IDS-GRN008", featured: true, status: "Disponible" },
+            { title: "Estudio Céntrico en Fuengirola", location: "Málaga", price: 750, rooms: 1, area: 45, type: "Alquiler", desc: "Estudio moderno a 5 minutos de la playa y la estación de tren. Ideal para una persona. Amueblado con calidad.", images: ["https://placehold.co/600x400/9C27B0/FFFFFF?text=Estudio+Fuengirola", "https://placehold.co/600x400/AB47BC/FFFFFF?text=Cama+Plegable", "https://placehold.co/600x400/CE93D8/FFFFFF?text=Balcón+Pequeño"], ref: "IDS-MLG009", featured: false, status: "Disponible" },
+            { title: "Bajo con Patio en San Fernando", location: "Cádiz", price: 165000, rooms: 3, area: 85, type: "Venta", desc: "Oportunidad! Bajo con patio interior privado. Necesita reforma, precio negociable. Zona con servicios cercanos.", images: ["https://placehold.co/600x400/FFEB3B/1F2937?text=Bajo+San+Fernando", "https://placehold.co/600x400/FFEE58/1F2937?text=Patio+Interior", "https://placehold.co/600x400/FFF176/1F2937?text=Cocina+a+Reformar"], ref: "IDS-CAD010", featured: false, status: "Vendida" },
+            { title: "Casa Palacio en Centro Histórico", location: "Sevilla", price: 1800000, rooms: 6, area: 600, type: "Venta", desc: "Impresionante Casa Palacio para rehabilitar, con patio central y gran potencial. Lujo histórico en el corazón de Sevilla.", images: ["https://placehold.co/600x400/263238/FFFFFF?text=Casa+Palacio+Sevilla", "https://placehold.co/600x400/37474F/FFFFFF?text=Patio+Central", "https://placehold.co/600x400/455A64/FFFFFF?text=Escalera+Noble"], ref: "IDS-SEV011", featured: true, status: "Disponible" },
+            { title: "Chalet Pareado en Monachil", location: "Granada", price: 299000, rooms: 4, area: 190, type: "Venta", desc: "Precioso chalet cerca de Sierra Nevada. Vistas espectaculares, garaje y calefacción central. Entorno natural único.", images: ["https://placehold.co/600x400/00BCD4/FFFFFF?text=Chalet+Monachil", "https://placehold.co/600x400/26C6DA/FFFFFF?text=Vistas+Sierra", "https://placehold.co/600x400/4DD0E1/FFFFFF?text=Jardín+Trasero"], ref: "IDS-GRN012", featured: true, status: "Reservada" },
+            { title: "Piso de 4 Habitaciones en La Merced", location: "Málaga", price: 1100, rooms: 4, area: 130, type: "Alquiler", desc: "Ideal para estudiantes o compartir. Totalmente amueblado, muy luminoso. Zona céntrica y bien comunicada.", images: ["https://placehold.co/600x400/8BC34A/FFFFFF?text=Piso+Merced+4H", "https://placehold.co/600x400/9CCC65/FFFFFF?text=Salón+Compartir", "https://placehold.co/600x400/AED581/FFFFFF?text=Dormitorio+Amplio"], ref: "IDS-MLG013", featured: false, status: "Disponible" },
+            { title: "Ático en Primera Línea de Playa", location: "Cádiz", price: 490000, rooms: 3, area: 100, type: "Venta", desc: "Impresionantes vistas al mar. Gran terraza. Plaza de garaje incluida. Una joya para disfrutar del Atlántico.", images: ["https://placehold.co/600x400/E91E63/FFFFFF?text=Ático+Playa+Cádiz", "https://placehold.co/600x400/EC407A/FFFFFF?text=Terraza+Mar", "https://placehold.co/600x400/F06292/FFFFFF?text=Vistas+Amanecer"], ref: "IDS-CAD014", featured: true, status: "Disponible" },
+            { title: "Dúplex con Solarium en Nervión", location: "Sevilla", price: 420000, rooms: 3, area: 125, type: "Venta", desc: "Dúplex moderno en Nervión, cerca del centro comercial. Solarium privado de 30m². Excelente calidad de construcción.", images: ["https://placehold.co/600x400/3F51B5/FFFFFF?text=Dúplex+Nervión", "https://placehold.co/600x400/5C6BC0/FFFFFF?text=Solarium+Privado", "https://placehold.co/600x400/7986CB/FFFFFF?text=Escalera+Diseño"], ref: "IDS-SEV015", featured: true, status: "Disponible" },
+            { title: "Casa con Jardín en Churriana", location: "Málaga", price: 340000, rooms: 4, area: 160, type: "Venta", desc: "Casa independiente con bonito jardín y piscina pequeña. Zona tranquila, cerca del aeropuerto y servicios.", images: ["https://placehold.co/600x400/E65100/FFFFFF?text=Casa+Churriana", "https://placehold.co/600x400/FF7043/FFFFFF?text=Piscina+Jardín", "https://placehold.co/600x400/FF9800/FFFFFF?text=Salón+Amplio"], ref: "IDS-MLG016", featured: false, status: "Vendida" },
+            { title: "Piso Económico en La Línea", location: "Cádiz", price: 95000, rooms: 2, area: 65, type: "Venta", desc: "Ideal para primera vivienda o inversión. Necesita mejoras. Cerca de Gibraltar. Excelente precio de entrada.", images: ["https://placehold.co/600x400/6D4C41/FFFFFF?text=Piso+La+Línea", "https://placehold.co/600x400/795548/FFFFFF?text=Dormitorio+Básico", "https://placehold.co/600x400/A1887F/FFFFFF?text=Fachada+Exterior"], ref: "IDS-CAD017", featured: false, status: "Disponible" },
+            { title: "Adosado de Lujo en Sanlúcar", location: "Cádiz", price: 450000, rooms: 5, area: 250, type: "Venta", desc: "Adosado de esquina, piscina privada, acabados de alta gama. Máximo confort y privacidad. Zona residencial.", images: ["https://placehold.co/600x400/9FA8DA/FFFFFF?text=Adosado+Sanlúcar", "https://placehold.co/600x400/7986CB/FFFFFF?text=Piscina+Esquina", "https://placehold.co/600x400/5C6BC0/FFFFFF?text=Terraza+Superior"], ref: "IDS-CAD018", featured: true, status: "Disponible" },
+            { title: "Piso en Realejo con Encanto", location: "Granada", price: 950, rooms: 2, area: 80, type: "Alquiler", desc: "Apartamento reformado, exterior, mucha luz. Balcones a la calle. Estilo andaluz moderno. Ubicación inmejorable.", images: ["https://placehold.co/600x400/D50000/FFFFFF?text=Piso+Realejo", "https://placehold.co/600x400/FF1744/FFFFFF?text=Balcones+Calle", "https://placehold.co/600x400/FF5252/FFFFFF?text=Salón+Moderno"], ref: "IDS-GRN019", featured: false, status: "Disponible" },
+            { title: "Villa de Inversión en Estepona", location: "Málaga", price: 980000, rooms: 4, area: 300, type: "Venta", desc: "Villa con alto potencial de alquiler vacacional. Gran parcela, piscina y vistas al mar. Cerca de campos de golf.", images: ["https://placehold.co/600x400/009688/FFFFFF?text=Villa+Estepona", "https://placehold.co/600x400/26A69A/FFFFFF?text=Piscina+Infinity", "https://placehold.co/600x400/4DB6AC/FFFFFF?text=Zona+Chillout"], ref: "IDS-MLG020", featured: true, status: "Reservada" },
+            // ... (30 propiedades más para completar las 50)
+            { title: "Piso Lujo en Los Remedios", location: "Sevilla", price: 650000, rooms: 4, area: 150, type: "Venta", desc: "Propiedad exclusiva, totalmente reformada con calidades de lujo, lista para entrar. Garaje opcional.", images: ["https://placehold.co/600x400/212121/FFFFFF?text=Piso+Remedios", "https://placehold.co/600x400/424242/FFFFFF?text=Detalle+Lujo", "https://placehold.co/600x400/616161/FFFFFF?text=Vista+Exterior"], ref: "IDS-SEV021", featured: true, status: "Disponible" },
+            { title: "Casa Cueva con Piscina", location: "Granada", price: 175000, rooms: 3, area: 100, type: "Venta", desc: "Experiencia única en Guadix. Casa cueva fresca en verano, cálida en invierno. Terraza y pequeña piscina.", images: ["https://placehold.co/600x400/BCAAA4/FFFFFF?text=Casa+Cueva", "https://placehold.co/600x400/D7CCC8/FFFFFF?text=Piscina+Terraza", "https://placehold.co/600x400/EFEBE9/1F2937?text=Interior+Rústico"], ref: "IDS-GRN022", featured: false, status: "Disponible" },
+            { title: "Piso a Estrenar en Teatinos", location: "Málaga", price: 315000, rooms: 3, area: 105, type: "Venta", desc: "Obra nueva. Cocina equipada, aire acondicionado centralizado. Incluye trastero y plaza de garaje.", images: ["https://placehold.co/600x400/4A148C/FFFFFF?text=Obra+Nueva+Teatinos", "https://placehold.co/600x400/6A1B9A/FFFFFF?text=Zonas+Comunes", "https://placehold.co/600x400/8E24AA/FFFFFF?text=Salón+Moderno"], ref: "IDS-MLG023", featured: true, status: "Reservada" },
+            { title: "Apartamento en Conil", location: "Cádiz", price: 900, rooms: 2, area: 70, type: "Alquiler", desc: "Alquiler vacacional (consultar). Cerca de la playa. Perfecto para temporada de verano. Totalmente equipado.", images: ["https://placehold.co/600x400/004D40/FFFFFF?text=Apto+Conil", "https://placehold.co/600x400/00695C/FFFFFF?text=Cerca+Playa", "https://placehold.co/600x400/00897B/FFFFFF?text=Terraza+Pequeña"], ref: "IDS-CAD024", featured: false, status: "Disponible" },
+            { title: "Piso Familiar en Bami", location: "Sevilla", price: 275000, rooms: 3, area: 90, type: "Venta", desc: "Ideal para familias. Zona tranquila, cerca de hospitales y colegios. Luminoso y reformado parcialmente.", images: ["https://placehold.co/600x400/311B92/FFFFFF?text=Piso+Bami", "https://placehold.co/600x400/4527A0/FFFFFF?text=Dormitorio+Infantil", "https://placehold.co/600x400/5E35B1/FFFFFF?text=Cocina+Reformada"], ref: "IDS-SEV025", featured: false, status: "Vendida" },
+            { title: "Ático en Centro de Granada", location: "Granada", price: 1800, rooms: 3, area: 120, type: "Alquiler", desc: "Ático de alto standing en la zona más exclusiva. Gran terraza con vistas 360º. Lujo y comodidad en pleno centro.", images: ["https://placehold.co/600x400/FBC02D/1F2937?text=Ático+Centro", "https://placehold.co/600x400/FDD835/1F2937?text=Terraza+360º", "https://placehold.co/600x400/FFEB3B/1F2937?text=Salón+Premium"], ref: "IDS-GRN026", featured: true, status: "Disponible" },
+            { title: "Casa de Pueblo en Nerja", location: "Málaga", price: 220000, rooms: 3, area: 110, type: "Venta", desc: "Casa tradicional andaluza con azotea privada, a 15 minutos andando del Balcón de Europa. Necesita actualización.", images: ["https://placehold.co/600x400/6A1B9A/FFFFFF?text=Casa+Nerja", "https://placehold.co/600x400/8E24AA/FFFFFF?text=Azotea+Vistas", "https://placehold.co/600x400/AB47BC/FFFFFF?text=Patio+Luz"], ref: "IDS-MLG027", featured: false, status: "Disponible" },
+            { title: "Terreno Urbano en Jerez", location: "Cádiz", price: 120000, rooms: 0, area: 500, type: "Venta", desc: "Parcela urbana consolidada, lista para construir chalet de 2 plantas. Zona residencial tranquila y bien comunicada.", images: ["https://placehold.co/600x400/4E342E/FFFFFF?text=Terreno+Jerez", "https://placehold.co/600x400/5D4037/FFFFFF?text=Zona+Urbana", "https://placehold.co/600x400/6D4C41/FFFFFF?text=Detalle+Calle"], ref: "IDS-CAD028", featured: false, status: "Disponible" },
+            { title: "Local Convertible en Vivienda", location: "Sevilla", price: 195000, rooms: 0, area: 80, type: "Venta", desc: "Local con posibilidad de cambio de uso a vivienda (Loft). Gran potencial de inversión en zona en crecimiento.", images: ["https://placehold.co/600x400/7CB342/FFFFFF?text=Local+Convertible", "https://placehold.co/600x400/8BC34A/FFFFFF?text=Interior+Diáfano", "https://placehold.co/600x400/9CCC65/FFFFFF?text=Fachada+Local"], ref: "IDS-SEV029", featured: false, status: "Reservada" },
+            { title: "Apartamento Turístico cerca del Centro", location: "Granada", price: 790, rooms: 1, area: 55, type: "Alquiler", desc: "Perfecto para corta o media estancia. Totalmente equipado, cerca de zonas de ocio y tapas. Gastos incluidos.", images: ["https://placehold.co/600x400/0091EA/FFFFFF?text=Apto+Turístico", "https://placehold.co/600x400/00B0FF/FFFFFF?text=Salón+Moderno", "https://placehold.co/600x400/40C4FF/FFFFFF?text=Balcón+Pequeño"], ref: "IDS-GRN030", featured: false, status: "Disponible" },
+            { title: "Villa de Golf en Mijas", location: "Málaga", price: 1550000, rooms: 6, area: 500, type: "Venta", desc: "Propiedad de primera línea de golf, diseño vanguardista, piscina climatizada y gimnasio privado.", images: ["https://placehold.co/600x400/29B6F6/FFFFFF?text=Villa+Golf+Mijas", "https://placehold.co/600x400/4FC3F7/FFFFFF?text=Piscina+Climatizada", "https://placehold.co/600x400/81D4FA/FFFFFF?text=Vista+Campo+Golf"], ref: "IDS-MLG031", featured: true, status: "Disponible" },
+            { title: "Piso Reformado en El Palo", location: "Málaga", price: 250000, rooms: 3, area: 90, type: "Venta", desc: "Piso exterior a 200m de la playa. Reforma integral reciente. Zona familiar con todos los servicios.", images: ["https://placehold.co/600x400/7E57C2/FFFFFF?text=Piso+El+Palo", "https://placehold.co/600x400/9575CD/FFFFFF?text=Cocina+Nueva", "https://placehold.co/600x400/B39DDB/FFFFFF?text=Balcón+Vistas"], ref: "IDS-MLG032", featured: false, status: "Reservada" },
+            { title: "Piso Centro de Almería", location: "Almería", price: 160000, rooms: 3, area: 85, type: "Venta", desc: "Propiedad céntrica y luminosa. Ideal para reformar a su gusto. Excelente potencial de revalorización.", images: ["https://placehold.co/600x400/EF6C00/FFFFFF?text=Piso+Almería", "https://placehold.co/600x400/FB8C00/FFFFFF?text=Salón+Antiguo", "https://placehold.co/600x400/FFA726/FFFFFF?text=Fachada+Clásica"], ref: "IDS-ALM033", featured: false, status: "Disponible" },
+            { title: "Casa Andaluza en Ronda", location: "Málaga", price: 280000, rooms: 4, area: 170, type: "Venta", desc: "Casa con encanto en el casco antiguo de Ronda. Patio interior y terraza con vistas a la sierra.", images: ["https://placehold.co/600x400/D81B60/FFFFFF?text=Casa+Ronda", "https://placehold.co/600x400/E91E63/FFFFFF?text=Patio+Andaluz", "https://placehold.co/600x400/F06292/FFFFFF?text=Vista+Sierra"], ref: "IDS-MLG034", featured: true, status: "Disponible" },
+            { title: "Adosado en Vejer de la Frontera", location: "Cádiz", price: 199000, rooms: 3, area: 130, type: "Venta", desc: "Casa típica en Vejer, reformada, con terraza en la azotea y vistas al pueblo blanco. Lista para alquiler vacacional.", images: ["https://placehold.co/600x400/5D4037/FFFFFF?text=Adosado+Vejer", "https://placehold.co/600x400/795548/FFFFFF?text=Azotea+Vejer", "https://placehold.co/600x400/A1887F/FFFFFF?text=Interior+Vejer"], ref: "IDS-CAD035", featured: false, status: "Vendida" },
+            { title: "Piso de Inversión en Triana", location: "Sevilla", price: 185000, rooms: 2, area: 65, type: "Venta", desc: "Ideal para alquiler turístico. Alta rentabilidad demostrada. Segunda planta sin ascensor.", images: ["https://placehold.co/600x400/FFCCBC/1F2937?text=Inversión+Triana", "https://placehold.co/600x400/FFAB91/1F2937?text=Rentabilidad+Alta", "https://placehold.co/600x400/FF8A65/1F2937?text=Salón+Pequeño"], ref: "IDS-SEV036", featured: false, status: "Disponible" },
+            { title: "Chalet Moderno en La Zubia", location: "Granada", price: 380000, rooms: 5, area: 210, type: "Venta", desc: "Diseño minimalista, jardín privado y sótano habitable. Excelentes conexiones con Granada capital.", images: ["https://placehold.co/600x400/9E9E9E/FFFFFF?text=Chalet+Zubia", "https://placehold.co/600x400/BDBDBD/FFFFFF?text=Jardín+Minimalista", "https://placehold.co/600x400/E0E0E0/1F2937?text=Sótano+Gym"], ref: "IDS-GRN037", featured: true, status: "Disponible" },
+            { title: "Piso de Lujo frente al Mar", location: "Málaga", price: 950000, rooms: 3, area: 140, type: "Venta", desc: "Vivienda en Paseo Marítimo, terraza con vistas frontales al mar. Garaje doble y seguridad 24h.", images: ["https://placehold.co/600x400/1DE9B6/1F2937?text=Frente+Mar+Málaga", "https://placehold.co/600x400/64FFDA/1F2937?text=Terraza+Frontal", "https://placehold.co/600x400/A7FFEB/1F2937?text=Paseo+Marítimo"], ref: "IDS-MLG038", featured: true, status: "Reservada" },
+            { title: "Ático con Piscina Privada", location: "Sevilla", price: 720000, rooms: 3, area: 110, type: "Venta", desc: "La única unidad con piscina privada en el solarium. Vistas a la ciudad. Lujo inigualable. Zona Aljarafe.", images: ["https://placehold.co/600x400/6200EA/FFFFFF?text=Ático+Piscina+Sevilla", "https://placehold.co/600x400/7C4DFF/FFFFFF?text=Piscina+Solarium", "https://placehold.co/600x400/B388FF/FFFFFF?text=Vistas+Ciudad"], ref: "IDS-SEV039", featured: true, status: "Disponible" },
+            { title: "Piso con Parking en Centro", location: "Granada", price: 1300, rooms: 2, area: 70, type: "Alquiler", desc: "Imprescindible plaza de parking en el centro de Granada. Amueblado con gusto. Comunidad incluida.", images: ["https://placehold.co/600x400/FF6E40/FFFFFF?text=Piso+Parking+Centro", "https://placehold.co/600x400/FF9E80/FFFFFF?text=Plaza+Garaje", "https://placehold.co/600x400/FFCCBC/FFFFFF?text=Salón+Acogedor"], ref: "IDS-GRN040", featured: false, status: "Disponible" },
+            { title: "Piso en zona universitaria", location: "Málaga", price: 900, rooms: 3, area: 85, type: "Alquiler", desc: "Perfecto para estudiantes. Totalmente reformado y amueblado. Cerca de la UMA.", images: ["https://placehold.co/600x400/448AFF/FFFFFF?text=Piso+UMA+Málaga", "https://placehold.co/600x400/82B1FF/FFFFFF?text=Habitaciones+Estudio", "https://placehold.co/600x400/BBDEFB/FFFFFF?text=Cocina+Funcional"], ref: "IDS-MLG041", featured: false, status: "Disponible" },
+            { title: "Chalet en Urbanización Exclusiva", location: "Cádiz", price: 680000, rooms: 5, area: 300, type: "Venta", desc: "Urbanización cerrada con vigilancia. Piscina y pistas deportivas. Lujo y seguridad garantizados.", images: ["https://placehold.co/600x400/FF9800/FFFFFF?text=Chalet+Exclusivo+Cádiz", "https://placehold.co/600x400/FFB74D/FFFFFF?text=Zonas+Deportivas", "https://placehold.co/600x400/FFCC80/FFFFFF?text=Piscina+Urb"], ref: "IDS-CAD042", featured: true, status: "Vendida" },
+            { title: "Casa con Potencial en Carmona", location: "Sevilla", price: 210000, rooms: 4, area: 150, type: "Venta", desc: "Casa tradicional sevillana con patio y azotea. Necesita reforma parcial. Gran potencial como boutique hotel.", images: ["https://placehold.co/600x400/757575/FFFFFF?text=Casa+Carmona", "https://placehold.co/600x400/9E9E9E/FFFFFF?text=Patio+Azotea", "https://placehold.co/600x400/E0E0E0/1F2937?text=Interior+Clásico"], ref: "IDS-SEV043", featured: false, status: "Disponible" },
+            { title: "Piso con Patio en Zaidín", location: "Granada", price: 235000, rooms: 3, area: 90, type: "Venta", desc: "Bajo con patio de uso privado de 30m². Excelente para familias. Reformado recientemente. Cerca de Metro.", images: ["https://placehold.co/600x400/26A69A/FFFFFF?text=Bajo+Zaidín", "https://placehold.co/600x400/4DB6AC/FFFFFF?text=Patio+Privado", "https://placehold.co/600x400/80CBC4/FFFFFF?text=Cocina+Equipada"], ref: "IDS-GRN044", featured: false, status: "Disponible" },
+            { title: "Apartamento en Primera Línea", location: "Cádiz", price: 1100, rooms: 2, area: 70, type: "Alquiler", desc: "Alquiler de larga temporada. Acceso directo a la playa. Terraza con vistas al Atlántico.", images: ["https://placehold.co/600x400/3D5AFE/FFFFFF?text=Larga+Temp+Playa", "https://placehold.co/600x400/7986CB/FFFFFF?text=Vistas+Atlántico", "https://placehold.co/600x400/BBDEFB/FFFFFF?text=Playa+Cercana"], ref: "IDS-CAD045", featured: true, status: "Disponible" },
+            { title: "Adosado en Mairena del Aljarafe", location: "Sevilla", price: 310000, rooms: 4, area: 180, type: "Venta", desc: "Adosado amplio, piscina comunitaria y garaje. Zona residencial ideal para familias. Cerca del metro.", images: ["https://placehold.co/600x400/F48FB1/FFFFFF?text=Adosado+Mairena", "https://placehold.co/600x400/F8BBD0/FFFFFF?text=Piscina+Comunitaria", "https://placehold.co/600x400/FFCDD2/FFFFFF?text=Salón+Familiar"], ref: "IDS-SEV046", featured: false, status: "Disponible" },
+            { title: "Ático Dúplex en el Centro", location: "Granada", price: 410000, rooms: 3, area: 130, type: "Venta", desc: "Ático dúplex con ascensor, totalmente exterior. Dos terrazas y acabados de primera calidad.", images: ["https://placehold.co/600x400/4DD0E1/FFFFFF?text=Ático+Dúplex+Centro", "https://placehold.co/600x400/80DEEA/FFFFFF?text=Terraza+Alta", "https://placehold.co/600x400/B2EBF2/FFFFFF?text=Escalera+Moderna"], ref: "IDS-GRN047", featured: true, status: "Reservada" },
+            { title: "Villa con Vistas al Mar en Benalmádena", location: "Málaga", price: 1200000, rooms: 5, area: 400, type: "Venta", desc: "Impresionante villa de diseño con panorámicas al mar, piscina privada e independencia total.", images: ["https://placehold.co/600x400/FFD54F/1F2937?text=Villa+Benalmádena", "https://placehold.co/600x400/FFEE58/1F2937?text=Piscina+Mar", "https://placehold.co/600x400/FFF176/1F2937?text=Diseño+Exterior"], ref: "IDS-MLG048", featured: true, status: "Disponible" },
+            { title: "Apartamento en Costa Ballena", location: "Cádiz", price: 290000, rooms: 2, area: 85, type: "Venta", desc: "Apartamento en urbanización de golf, a 5 minutos de la playa. Zonas comunes, piscina y garaje.", images: ["https://placehold.co/600x400/69F0AE/1F2937?text=Apto+Costa+Ballena", "https://placehold.co/600x400/B9F6CA/1F2937?text=Piscina+Golf", "https://placehold.co/600x400/CCFF90/1F2937?text=Terraza+Golf"], ref: "IDS-CAD049", featured: false, status: "Disponible" },
+            { title: "Piso a reformar en Huelva Capital", location: "Huelva", price: 75000, rooms: 3, area: 75, type: "Venta", desc: "Gran oportunidad de inversión. Piso para reforma integral. Excelente ubicación cerca de la Universidad. Bajo coste.", images: ["https://placehold.co/600x400/FF7043/FFFFFF?text=Piso+Huelva", "https://placehold.co/600x400/FF8A65/FFFFFF?text=Interior+Antiguo", "https://placehold.co/600x400/FFAB91/FFFFFF?text=Fachada+Huelva"], ref: "IDS-HUL050", featured: false, status: "Disponible" },
+            { title: "Apartamento en Alquiler de Corta Duración", location: "Málaga", price: 80, rooms: 1, area: 40, type: "Alquiler", desc: "Precio por día. Totalmente equipado para corta duración (turístico). Cerca del centro y playa de la Malagueta.", images: ["https://placehold.co/600x400/607D8B/FFFFFF?text=Apto+Corto+Málaga", "https://placehold.co/600x400/78909C/FFFFFF?text=Malagueta+Cerca", "https://placehold.co/600x400/90A4AE/FFFFFF?text=Detalle+Cama"], ref: "IDS-MLG051", featured: false, status: "Disponible" }
+        ];
 
-    cargarDatos();
-  </script>
+        // --- FIN DE DATOS DE EJEMPLO (50 PROPIEDADES) ---
+
+
+        try {
+            if (Object.keys(firebaseConfig).length === 0) {
+                console.error("Firebase config is empty. Cannot initialize Firebase.");
+            } else {
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                auth = getAuth(app);
+            }
+        } catch (e) {
+            console.error("Error initializing Firebase:", e);
+        }
+
+        /**
+         * Inicializa la autenticación y el listener de Firestore.
+         */
+        const initializeAppAndAuth = async () => {
+            if (!auth || !db) {
+                document.getElementById('app-container').innerHTML = `<p class="text-center text-red-600 p-10">Error: Firebase no está configurado correctamente.</p>`;
+                return;
+            }
+
+            try {
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Error durante la autenticación:", error);
+                // Si falla la autenticación, intentar anónimo como fallback
+                try {
+                    await signInAnonymously(auth);
+                } catch (anonError) {
+                    console.error("Error en autenticación anónima:", anonError);
+                }
+            }
+
+            onAuthStateChanged(auth, (user) => {
+                if (user) {
+                    userId = user.uid;
+                    // Iniciar el listener de propiedades solo después de la autenticación
+                    setupFirestoreListener();
+                } else {
+                    // Si no hay usuario, usamos un ID temporal (aunque Firestore debería forzar autenticado)
+                    userId = crypto.randomUUID();
+                    setupFirestoreListener();
+                }
+                
+                // Redireccionar a la vista correcta (pública por defecto)
+                showView('public');
+            });
+        };
+
+        const propertiesCollectionRef = () => collection(db, 'artifacts', appId, 'public', 'data', 'properties');
+
+        /**
+         * Precarga propiedades de ejemplo si la colección está vacía.
+         */
+        const preloadExamples = async () => {
+            try {
+                const snapshot = await getDocs(propertiesCollectionRef());
+                if (snapshot.empty) {
+                    console.log("Colección vacía. Precargando ejemplos de Andalucía...");
+                    // Asegurar que todas las propiedades tienen un array de 3 imágenes
+                    const safeExamples = andalusiaExamples.map(p => ({
+                        ...p,
+                        images: Array.isArray(p.images) && p.images.length === 3 ? p.images : [p.images[0] || 'https://placehold.co/600x400/D1D5DB/282828?text=Sin+Imagen', 'https://placehold.co/600x400/D1D5DB/282828?text=Ref+1', 'https://placehold.co/600x400/D1D5DB/282828?text=Ref+2']
+                    }));
+
+                    for (const data of safeExamples) {
+                        await addDoc(propertiesCollectionRef(), data);
+                    }
+                    showMessage(`Ejemplos de ${safeExamples.length} propiedades Andaluzas precargados.`, 'green');
+                }
+            } catch (error) {
+                console.error("Error al precargar ejemplos:", error);
+            }
+        };
+
+        /**
+         * Configura el listener de tiempo real (onSnapshot) para las propiedades públicas.
+         */
+        const setupFirestoreListener = () => {
+            
+            // Intentar precargar ejemplos solo después de saber que Firestore está listo
+            preloadExamples();
+
+            // onSnapshot para actualizar la lista de propiedades en tiempo real
+            onSnapshot(propertiesCollectionRef(), (snapshot) => {
+                window.properties = [];
+                snapshot.forEach((doc) => {
+                    const data = doc.data();
+                    // Asegurar que 'images' es un array de 3 elementos para evitar fallos
+                    const safeImages = Array.isArray(data.images) && data.images.length === 3 ? data.images : [data.image || 'https://placehold.co/600x400/D1D5DB/282828?text=Sin+Imagen', 'https://placehold.co/600x400/D1D5DB/282828?text=Ref+1', 'https://placehold.co/600x400/D1D5DB/282828?text=Ref+2'];
+                    
+                    window.properties.push({ 
+                        id: doc.id, 
+                        ...data, 
+                        images: safeImages,
+                        // Mantener 'image' como alias del principal para compatibilidad si alguien lo edita mal
+                        image: safeImages[0] 
+                    });
+                });
+                
+                // Re-renderizar las vistas al recibir nuevos datos
+                renderProperties(window.properties.filter(p => p.featured && p.status !== 'Vendida').slice(0, 3), 'featured-properties-grid');
+                renderProperties(window.properties.filter(p => p.status !== 'Vendida'), 'properties-grid');
+                renderAdminList(window.properties);
+                
+                // Actualizar el estado de carga
+                document.getElementById('loading-indicator').classList.add('hidden');
+
+            }, (error) => {
+                console.error("Error al escuchar cambios en Firestore:", error);
+                document.getElementById('loading-indicator').textContent = 'Error al cargar propiedades. Revise la consola.';
+            });
+        };
+        
+        // Llamar a la inicialización al cargar la ventana
+        window.onload = initializeAppAndAuth;
+
+
+        // -----------------------------------------------------------
+        // 5. FIREBASE CRUD OPERATIONS (ADMIN)
+        // -----------------------------------------------------------
+
+        
+        window.saveProperty = async (data) => {
+            try {
+                const docRef = data.id ? doc(propertiesCollectionRef(), data.id) : null;
+                
+                // Procesar el array de imágenes
+                const imagesArray = [data.image_1, data.image_2, data.image_3].map(url => url.trim() || 'https://placehold.co/600x400/D1D5DB/282828?text=Sin+Imagen');
+
+                const propertyData = {
+                    title: data.title,
+                    location: data.location,
+                    price: parseFloat(data.price),
+                    rooms: parseInt(data.rooms),
+                    area: parseInt(data.area),
+                    type: data.type,
+                    desc: data.desc,
+                    images: imagesArray, // Usamos el array
+                    image: imagesArray[0], // Guardamos el primero como principal
+                    ref: data.ref || 'IDS-' + Math.floor(100 + Math.random() * 900),
+                    featured: data.featured === 'true',
+                    status: data.status || 'Disponible'
+                };
+
+                if (docRef) {
+                    await updateDoc(docRef, propertyData);
+                    showMessage('Propiedad actualizada con éxito.', 'green');
+                } else {
+                    await addDoc(propertiesCollectionRef(), propertyData);
+                    showMessage('Propiedad agregada con éxito.', 'green');
+                }
+                document.getElementById('admin-modal').classList.add('hidden');
+            } catch (e) {
+                console.error("Error al guardar la propiedad:", e);
+                showMessage('Error al guardar la propiedad. Revise la consola. (Verifique números y URLs)', 'red');
+            }
+        };
+
+        window.deleteProperty = async (id) => {
+            if (!id) return;
+            const confirmed = await showCustomConfirmation('¿Estás seguro de que quieres ELIMINAR esta propiedad? Esta acción es irreversible.');
+            if (confirmed) {
+                 try {
+                    await deleteDoc(doc(propertiesCollectionRef(), id));
+                    showMessage('Propiedad eliminada correctamente.', 'green');
+                } catch (e) {
+                    console.error("Error al eliminar la propiedad:", e);
+                    showMessage('Error al eliminar la propiedad. Revise la consola.', 'red');
+                }
+            }
+        };
+
+        // -----------------------------------------------------------
+        // 6. UI/RENDERING UTILITIES
+        // -----------------------------------------------------------
+        
+        const formatPrice = (price) => {
+            return new Intl.NumberFormat('es-ES', {
+                style: 'currency',
+                currency: 'EUR',
+                minimumFractionDigits: 0
+            }).format(price);
+        };
+        
+        const showMessage = (text, color) => {
+            const el = document.getElementById('global-message');
+            el.textContent = text;
+            el.className = `fixed top-0 left-1/2 -translate-x-1/2 p-3 mt-4 rounded-lg text-white text-sm font-semibold z-[10000] shadow-xl ${color === 'green' ? 'bg-green-500' : 'bg-red-500'} transition duration-300`;
+            el.classList.remove('hidden');
+            setTimeout(() => {
+                el.classList.add('hidden');
+            }, 5000);
+        };
+        
+        // Simulación de Modal de Confirmación
+        window.showCustomConfirmation = (message) => {
+            return new Promise(resolve => {
+                const modalHtml = `
+                    <div id="confirmation-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center p-4 z-[10001]">
+                        <div class="bg-white rounded-xl p-8 max-w-sm w-full shadow-2xl">
+                            <p class="text-lg font-semibold mb-6 text-gray-800">${message}</p>
+                            <div class="flex justify-end space-x-3">
+                                <button id="confirm-no" class="px-4 py-2 text-gray-700 bg-gray-200 rounded-full hover:bg-gray-300 transition duration-150">Cancelar</button>
+                                <button id="confirm-yes" class="px-4 py-2 text-white bg-red-600 rounded-full hover:bg-red-700 transition duration-150">Confirmar Eliminación</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                document.body.insertAdjacentHTML('beforeend', modalHtml);
+                
+                const modal = document.getElementById('confirmation-modal');
+                const close = () => modal.remove();
+                
+                document.getElementById('confirm-yes').onclick = () => { close(); resolve(true); };
+                document.getElementById('confirm-no').onclick = () => { close(); resolve(false); };
+            });
+        };
+
+        // -----------------------------------------------------------
+        // 7. VISTA PÚBLICA (Public Site) - HTML Structure & Modals
+        // -----------------------------------------------------------
+        
+        /**
+         * Crea la tarjeta de propiedad.
+         */
+        const createPropertyCard = (property) => {
+            const isReserved = property.status === 'Reservada';
+            const isSold = property.status === 'Vendida';
+            const statusClass = isSold ? 'bg-red-500' : (isReserved ? 'bg-yellow-500' : 'bg-secondary');
+            
+            // Usamos la primera imagen del array 'images'
+            const mainImage = property.images && property.images.length > 0 ? property.images[0] : 'https://placehold.co/600x400/D1D5DB/282828?text=Sin+Imagen';
+
+            return `
+                <div onclick="openDetailModal('${property.id}')" class="bg-white rounded-xl shadow-lg hover:shadow-2xl transition duration-300 overflow-hidden group border border-gray-100 transform hover:scale-[1.03] cursor-pointer">
+                    <div class="relative h-56 overflow-hidden">
+                        <img src="${mainImage}" alt="Imagen de ${property.title}" class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.05]" onerror="this.onerror=null;this.src='https://placehold.co/600x400/D1D5DB/282828?text=Sin+Imagen';" loading="lazy">
+                        <span class="absolute top-3 left-3 px-3 py-1 text-xs font-bold rounded-full text-white ${statusClass}">
+                            ${property.status.toUpperCase()}
+                        </span>
+                    </div>
+                    
+                    <div class="p-5">
+                        <h4 class="text-xs font-semibold uppercase tracking-wider text-primary truncate">${property.location} - ${property.type}</h4>
+                        <h3 class="mt-1 text-xl font-extrabold text-gray-900 truncate">${property.title}</h3>
+                        
+                        <div class="mt-3 flex justify-between items-end">
+                            <p class="text-3xl font-extrabold text-secondary">${formatPrice(property.price)}</p>
+                            <p class="text-sm text-gray-600">${property.area} m² / ${property.rooms} hab.</p>
+                        </div>
+
+                        <p class="mt-3 text-sm text-gray-600 line-clamp-2">${property.desc}</p>
+                        
+                        <div class="mt-5 flex justify-end">
+                            <span class="text-xs font-medium text-gray-400 mr-auto">Ref: ${property.ref}</span>
+                            <button class="px-4 py-2 text-sm font-bold rounded-full bg-primary text-white hover:bg-secondary transition duration-150">Ver Detalles</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+        
+        const renderProperties = (propertiesToRender, containerId) => {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            if (propertiesToRender.length === 0) {
+                container.innerHTML = `<p class="text-center col-span-full text-gray-500 p-8">${containerId === 'properties-grid' ? 'No se encontraron propiedades que coincidan con los criterios de búsqueda.' : 'No hay propiedades destacadas en este momento.'}</p>`;
+                return;
+            }
+            
+            container.innerHTML = propertiesToRender.map(createPropertyCard).join('');
+        };
+        
+        // Función de Filtrado de Propiedades
+        window.filterProperties = () => {
+            const type = document.getElementById('filter-type').value;
+            const location = document.getElementById('filter-location').value;
+            const rooms = parseInt(document.getElementById('filter-rooms').value);
+            const searchText = document.getElementById('search-text').value.toLowerCase();
+            
+            let filtered = window.properties.filter(p => p.status !== 'Vendida');
+
+            if (type !== 'all') filtered = filtered.filter(p => p.type === type);
+            if (location !== 'all') filtered = filtered.filter(p => p.location === location);
+            if (rooms > 0) filtered = filtered.filter(p => p.rooms >= rooms);
+
+            if (searchText) {
+                filtered = filtered.filter(p => 
+                    p.ref.toLowerCase().includes(searchText) ||
+                    p.title.toLowerCase().includes(searchText) ||
+                    p.location.toLowerCase().includes(searchText) ||
+                    p.desc.toLowerCase().includes(searchText)
+                );
+            }
+
+            renderProperties(filtered, 'properties-grid');
+        };
+
+        /**
+         * Cambia la imagen principal del modal
+         */
+        window.setMainImage = (src) => {
+            document.getElementById('modal-detail-main-image').src = src;
+            
+            // Actualizar borde de la miniatura seleccionada
+            document.querySelectorAll('#modal-detail-gallery > div').forEach(thumb => {
+                thumb.classList.remove('border-secondary');
+                thumb.classList.add('border-transparent');
+            });
+            const selectedThumb = document.querySelector(`[onclick="setMainImage('${src}')"]`);
+            if (selectedThumb) {
+                selectedThumb.classList.remove('border-transparent');
+                selectedThumb.classList.add('border-secondary');
+            }
+        };
+
+        /**
+         * Abre el modal con los detalles completos de una propiedad.
+         */
+        window.openDetailModal = (id) => {
+            const property = window.properties.find(p => p.id === id);
+            if (!property) return;
+
+            const modal = document.getElementById('property-detail-modal');
+            const isSold = property.status === 'Vendida';
+            
+            // 1. Inyectar datos de texto
+            document.getElementById('modal-detail-title').textContent = property.title;
+            document.getElementById('modal-detail-ref').textContent = `Ref: ${property.ref}`;
+            document.getElementById('modal-detail-price').textContent = formatPrice(property.price);
+            document.getElementById('modal-detail-location').textContent = property.location;
+            document.getElementById('modal-detail-type').textContent = property.type;
+            document.getElementById('modal-detail-rooms').textContent = property.rooms;
+            document.getElementById('modal-detail-area').textContent = `${property.area} m²`;
+            document.getElementById('modal-detail-status').textContent = property.status;
+            document.getElementById('modal-detail-description').textContent = property.desc;
+            
+            // 2. Configurar la Galería de Imágenes
+            const galleryContainer = document.getElementById('modal-detail-gallery');
+            const images = property.images;
+            
+            // Inyectar miniaturas
+            galleryContainer.innerHTML = images.map((img, index) => `
+                <div onclick="setMainImage('${img}')" class="cursor-pointer border-2 p-1 rounded-lg transition duration-150 ${index === 0 ? 'border-secondary' : 'border-transparent hover:border-gray-400'}">
+                    <img src="${img}" class="w-full h-20 object-cover rounded-md" alt="Miniatura ${index + 1}" onerror="this.onerror=null;this.src='https://placehold.co/100x75/D1D5DB/282828?text=Ref+${index+1}';" loading="lazy">
+                </div>
+            `).join('');
+
+            // Establecer la imagen principal (siempre la primera al abrir)
+            window.setMainImage(images[0]);
+
+
+            // 3. Configurar Botón de Contacto
+            const whatsappLink = `https://wa.me/5492236859865?text=Hola%20Lucas%2C%20estoy%20interesado%20en%20la%20propiedad%20${property.ref}%20que%20vi%20en%20tu%20web%20y%20quiero%20más%20información.`;
+            const contactButton = document.getElementById('modal-detail-whatsapp');
+            contactButton.href = whatsappLink;
+            contactButton.textContent = isSold ? 'Propiedad Vendida' : 'Contactar a Lucas por WhatsApp';
+            
+            contactButton.classList.toggle('pointer-events-none', isSold);
+            contactButton.classList.toggle('opacity-50', isSold);
+            contactButton.classList.toggle('bg-gray-500', isSold); // Cambio de color si está vendida
+            contactButton.classList.toggle('bg-green-500', !isSold);
+
+            
+            modal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden'); // Prevenir scroll del fondo
+        };
+
+        /**
+         * Cierra el modal de detalle de propiedad.
+         */
+        window.closeDetailModal = () => {
+            document.getElementById('property-detail-modal').classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+        };
+
+        // -----------------------------------------------------------
+        // 8. VISTA ADMIN (CMS) - HTML Structure
+        // -----------------------------------------------------------
+        
+        const renderAdminList = (propertiesList) => {
+            const listContainer = document.getElementById('admin-properties-list');
+            if (!listContainer) return;
+            
+            if (propertiesList.length === 0) {
+                listContainer.innerHTML = `<tr class="bg-white"><td colspan="5" class="p-4 text-center text-gray-500">No hay propiedades cargadas. ¡Comienza a agregar una!</td></tr>`;
+                return;
+            }
+
+            listContainer.innerHTML = propertiesList.sort((a, b) => b.price - a.price).map(p => `
+                <tr class="bg-white border-b hover:bg-gray-50 transition duration-150">
+                    <td class="p-4 font-semibold text-primary">${p.ref}</td>
+                    <td class="p-4 text-gray-800">${p.title}</td>
+                    <td class="p-4">${p.location} (${p.type})</td>
+                    <td class="p-4">${formatPrice(p.price)}</td>
+                    <td class="p-4">
+                        <span class="px-3 py-1 text-xs font-bold rounded-full text-white ${p.status === 'Disponible' ? 'bg-secondary' : p.status === 'Reservada' ? 'bg-yellow-500' : 'bg-red-500'}">${p.status}</span>
+                        <span class="ml-2 px-3 py-1 text-xs font-bold rounded-full ${p.featured ? 'bg-primary text-white' : 'bg-gray-300 text-gray-600'}">${p.featured ? 'Destacada' : 'Normal'}</span>
+                    </td>
+                    <td class="p-4 space-x-2">
+                        <button onclick="openAdminModal('${p.id}')" class="text-blue-600 hover:text-blue-800 transition duration-150">Editar</button>
+                        <button onclick="deleteProperty('${p.id}')" class="text-red-600 hover:text-red-800 transition duration-150">Eliminar</button>
+                    </td>
+                </tr>
+            `).join('');
+        };
+        
+        window.openAdminModal = (propertyId = null) => {
+            const modal = document.getElementById('admin-modal');
+            const form = document.getElementById('property-form');
+            const titleElement = document.getElementById('modal-title');
+            
+            form.reset();
+            let property = {};
+            
+            if (propertyId) {
+                property = window.properties.find(p => p.id === propertyId);
+                titleElement.textContent = `Editar Propiedad: ${property.ref}`;
+                
+                // Rellenar formulario
+                document.getElementById('property-id').value = property.id;
+                document.getElementById('title').value = property.title;
+                document.getElementById('ref').value = property.ref;
+                document.getElementById('location').value = property.location;
+                document.getElementById('price').value = property.price;
+                document.getElementById('rooms').value = property.rooms;
+                document.getElementById('area').value = property.area;
+                document.getElementById('type').value = property.type;
+                document.getElementById('status').value = property.status;
+                document.getElementById('featured').value = property.featured ? 'true' : 'false';
+                document.getElementById('desc').value = property.desc;
+
+                // Rellenar las 3 URLs de imagen
+                if (Array.isArray(property.images)) {
+                    document.getElementById('image_1').value = property.images[0] || '';
+                    document.getElementById('image_2').value = property.images[1] || '';
+                    document.getElementById('image_3').value = property.images[2] || '';
+                }
+
+
+            } else {
+                titleElement.textContent = 'Crear Nueva Propiedad';
+                document.getElementById('property-id').value = ''; // ID vacío para nuevo registro
+                document.getElementById('ref').value = 'IDS-' + Math.floor(100 + Math.random() * 900); // Nuevo ref para nueva propiedad
+                document.getElementById('image_1').value = '';
+                document.getElementById('image_2').value = '';
+                document.getElementById('image_3').value = '';
+            }
+            
+            modal.classList.remove('hidden');
+        };
+        
+        window.closeAdminModal = () => {
+            document.getElementById('admin-modal').classList.add('hidden');
+        };
+        
+        document.addEventListener('DOMContentLoaded', () => {
+             const form = document.getElementById('property-form');
+             if (form) {
+                 form.addEventListener('submit', (e) => {
+                     e.preventDefault();
+                     const formData = new FormData(form);
+                     const data = {};
+                     formData.forEach((value, key) => data[key] = value);
+                     window.saveProperty(data);
+                 });
+             }
+        });
+
+        // -----------------------------------------------------------
+        // 9. VISTA MANAGER (SPA Routing)
+        // -----------------------------------------------------------
+
+        window.showView = (viewName) => {
+            document.querySelectorAll('.app-view').forEach(view => {
+                view.classList.add('hidden');
+            });
+
+            const viewId = viewName === 'admin' ? 'admin-view' : 'public-view';
+            const targetView = document.getElementById(viewId);
+            if (targetView) {
+                targetView.classList.remove('hidden');
+                
+                // Si cambiamos a la vista pública, re-renderizar las propiedades con el filtro inicial
+                if (viewName === 'public' && window.properties.length > 0) {
+                    window.filterProperties();
+                }
+            }
+        };
+
+        // -----------------------------------------------------------
+        // 10. BOTONES DE NAVEGACIÓN (HEADER) - DEFINICIÓN MOVida a Global
+        // -----------------------------------------------------------
+
+    </script>
+
+
+    <!-- ----------------------------------------------------------- -->
+    <!-- APP CONTAINER (Contiene todas las vistas) -->
+    <!-- ----------------------------------------------------------- -->
+    <div id="app-container">
+        
+        <!-- Mensaje Global de Feedback -->
+        <div id="global-message" class="hidden"></div>
+        
+        <!-- Indicador de Carga -->
+        <div id="loading-indicator" class="fixed inset-0 bg-white/90 flex items-center justify-center z-[10000]">
+            <div class="text-center">
+                <div class="w-12 h-12 border-4 border-secondary border-t-primary rounded-full animate-spin mx-auto mb-3"></div>
+                <p class="text-lg text-gray-700 font-semibold">Cargando datos del experto y propiedades...</p>
+            </div>
+        </div>
+
+        <!-- ----------------------------------------------------------- -->
+        <!-- VISTA DE ADMINISTRACIÓN (CMS) -->
+        <!-- ----------------------------------------------------------- -->
+        <div id="admin-view" class="app-view hidden">
+            <!-- Header Específico para Admin -->
+            <script>document.write(getHeader(true));</script>
+            
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+                <div class="flex justify-between items-center mb-8 border-b pb-4">
+                    <h1 class="text-3xl font-extrabold text-primary">Panel de Control CMS</h1>
+                    <button onclick="openAdminModal()" class="bg-secondary text-white font-bold px-6 py-2 rounded-full hover:bg-primary transition duration-150 shadow-lg transform hover:scale-[1.05]">
+                        + Agregar Nueva Propiedad
+                    </button>
+                </div>
+                
+                <div class="bg-white rounded-xl shadow-xl overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="p-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Ref.</th>
+                                <th class="p-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Título</th>
+                                <th class="p-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Ubicación/Tipo</th>
+                                <th class="p-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Precio</th>
+                                <th class="p-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Estado/Destacado</th>
+                                <th class="p-4 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-properties-list" class="divide-y divide-gray-200">
+                            <!-- Propiedades cargadas por JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <p class="mt-8 text-sm text-gray-500 text-center">ID de Usuario Administrador: <span class="font-mono text-primary">${userId}</span></p>
+
+            </div>
+
+            <!-- Modal de Edición/Creación -->
+            <div id="admin-modal" class="fixed inset-0 bg-gray-900 bg-opacity-75 hidden flex items-center justify-center p-4 z-[9999]">
+                <div class="bg-white rounded-xl max-w-3xl w-full max-h-[90vh] overflow-y-auto shadow-2xl relative p-8">
+                    <h2 id="modal-title" class="text-2xl font-bold mb-6 text-primary border-b pb-2">Crear Nueva Propiedad</h2>
+                    
+                    <form id="property-form" class="space-y-4">
+                        <input type="hidden" id="property-id" name="id">
+                        
+                        <!-- Fila 1: Título y Ref -->
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="col-span-2">
+                                <label for="title" class="block text-sm font-medium text-gray-700">Título de la Propiedad</label>
+                                <input type="text" id="title" name="title" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-secondary focus:border-secondary">
+                            </div>
+                            <div>
+                                <label for="ref" class="block text-sm font-medium text-gray-700">Referencia (IDS-XXX)</label>
+                                <input type="text" id="ref" name="ref" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-secondary focus:border-secondary" required>
+                            </div>
+                        </div>
+                        
+                        <!-- Fila 2: Precio, Habitaciones, Área -->
+                        <div class="grid grid-cols-3 gap-4">
+                            <div>
+                                <label for="price" class="block text-sm font-medium text-gray-700">Precio (€)</label>
+                                <input type="number" id="price" name="price" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-secondary focus:border-secondary">
+                            </div>
+                            <div>
+                                <label for="rooms" class="block text-sm font-medium text-gray-700">Habitaciones</label>
+                                <input type="number" id="rooms" name="rooms" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-secondary focus:border-secondary">
+                            </div>
+                            <div>
+                                <label for="area" class="block text-sm font-medium text-gray-700">Área (m²)</label>
+                                <input type="number" id="area" name="area" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-secondary focus:border-secondary">
+                            </div>
+                        </div>
+
+                        <!-- Fila 3: Ubicación, Tipo, Status, Destacado -->
+                        <div class="grid grid-cols-4 gap-4">
+                            <div>
+                                <label for="location" class="block text-sm font-medium text-gray-700">Ubicación</label>
+                                <input type="text" id="location" name="location" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-secondary focus:border-secondary">
+                            </div>
+                            <div>
+                                <label for="type" class="block text-sm font-medium text-gray-700">Tipo</label>
+                                <select id="type" name="type" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-secondary focus:border-secondary">
+                                    <option value="Venta">Venta</option>
+                                    <option value="Alquiler">Alquiler</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="status" class="block text-sm font-medium text-gray-700">Estado</label>
+                                <select id="status" name="status" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-secondary focus:border-secondary">
+                                    <option value="Disponible">Disponible</option>
+                                    <option value="Reservada">Reservada</option>
+                                    <option value="Vendida">Vendida</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="featured" class="block text-sm font-medium text-gray-700">Destacada</label>
+                                <select id="featured" name="featured" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-secondary focus:border-secondary">
+                                    <option value="true">Sí</option>
+                                    <option value="false">No</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <!-- Fila 4: Imágenes de Referencia (3 URLs) -->
+                        <div class="space-y-2 pt-4 border-t">
+                             <label class="block text-sm font-medium text-gray-700">URLs de Imágenes (Se requieren 3, la primera será la principal)</label>
+                            <input type="url" id="image_1" name="image_1" placeholder="URL Imagen Principal (600x400)" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-secondary focus:border-secondary" required>
+                            <input type="url" id="image_2" name="image_2" placeholder="URL Imagen de Referencia 1" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-secondary focus:border-secondary">
+                            <input type="url" id="image_3" name="image_3" placeholder="URL Imagen de Referencia 2" class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-secondary focus:border-secondary">
+                        </div>
+
+
+                        <!-- Fila 5: Descripción -->
+                        <div>
+                            <label for="desc" class="block text-sm font-medium text-gray-700">Descripción (Máx. 2 líneas en ficha)</label>
+                            <textarea id="desc" name="desc" rows="3" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2 focus:ring-secondary focus:border-secondary"></textarea>
+                        </div>
+                        
+                        <!-- Botones de Acción -->
+                        <div class="flex justify-end space-x-4 pt-4">
+                            <button type="button" onclick="closeAdminModal()" class="px-6 py-2 border border-gray-300 text-gray-700 rounded-full hover:bg-gray-100 transition duration-150">Cancelar</button>
+                            <button type="submit" class="px-6 py-2 bg-primary text-white font-bold rounded-full hover:bg-secondary transition duration-150 shadow-lg transform hover:scale-[1.02]">
+                                Guardar Propiedad
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- ----------------------------------------------------------- -->
+        <!-- VISTA PÚBLICA (PUBLIC SITE) -->
+        <!-- ----------------------------------------------------------- -->
+        <div id="public-view" class="app-view hidden">
+            <!-- Header Específico para Público -->
+            <script>document.write(getHeader(false));</script>
+
+            <main>
+                <!-- 1. Sección de Inicio (Home) -->
+                <section id="inicio" class="relative overflow-hidden pt-16 md:pt-20">
+                    <!-- Hero Banner - Gran Imagen con Superposición Minimalista -->
+                    <div class="bg-primary/90 h-[50vh] md:h-[70vh] flex items-center justify-center p-4">
+                        <!-- Imagen de fondo (Placeholder) -->
+                        <div class="absolute inset-0 z-0 opacity-40" style="background-image: url('https://placehold.co/1920x1080/0D47A1/FFFFFF?text=Tu+Futuro+Hogar'); background-size: cover; background-position: center;"></div>
+                        
+                        <div class="max-w-4xl mx-auto text-center relative z-10 p-6 md:p-12 bg-white/95 rounded-xl shadow-2xl transition duration-500 hover:shadow-3xl">
+                            <p class="text-lg font-bold text-secondary mb-2">InmoDigitalStudio | Asesoría de Élite</p>
+                            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-primary leading-tight mb-6">
+                                <span class="text-secondary">Visión Estratégica</span> para tu Inversión Inmobiliaria
+                            </h1>
+                            <a href="#propiedades" class="inline-flex items-center justify-center px-8 py-3 border border-transparent text-base font-bold rounded-full text-white bg-primary hover:bg-secondary transition duration-300 shadow-xl transform hover:scale-105 hover:shadow-2xl">
+                                Ver Cartera de Oportunidades
+                            </a>
+                        </div>
+                    </div>
+                
+                    <!-- Propiedades Destacadas -->
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+                        <h2 class="text-3xl md:text-4xl font-extrabold text-primary mb-10 border-b-2 border-secondary pb-3 text-center">Selección Premium del Experto</h2>
+                        <div id="featured-properties-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                            <!-- Propiedades destacadas cargadas por JS -->
+                        </div>
+                        <div class="text-center mt-12">
+                            <a href="#propiedades" class="inline-flex items-center justify-center px-6 py-2 border-2 border-primary text-base font-bold rounded-full text-primary hover:bg-primary hover:text-white transition duration-300 transform hover:scale-105">
+                                Explorar el Catálogo Completo
+                            </a>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. Sección de Propiedades -->
+                <section id="propiedades" class="bg-gray-100 py-16 md:py-24">
+                    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <h2 class="text-3xl md:text-4xl font-extrabold text-primary mb-8 text-center">El Catálogo Inmobiliario Optimizado</h2>
+
+                        <!-- Filtros y Barra de Búsqueda -->
+                        <div class="bg-white p-6 rounded-xl shadow-xl mb-12 border-t-4 border-secondary transition duration-500 transform hover:scale-[1.005]">
+                            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div>
+                                    <label for="filter-type" class="block text-sm font-medium text-primary">Tipo</label>
+                                    <select id="filter-type" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md focus:ring-primary focus:border-primary transition duration-150">
+                                        <option value="all">Todos</option>
+                                        <option value="Venta">Venta</option>
+                                        <option value="Alquiler">Alquiler</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="filter-location" class="block text-sm font-medium text-primary">Ubicación</label>
+                                    <select id="filter-location" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md focus:ring-primary focus:border-primary transition duration-150">
+                                        <option value="all">Todas</option>
+                                        <option value="Málaga">Málaga</option>
+                                        <option value="Sevilla">Sevilla</option>
+                                        <option value="Granada">Granada</option>
+                                        <option value="Cádiz">Cádiz</option>
+                                        <option value="Almería">Almería</option>
+                                        <option value="Huelva">Huelva</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label for="filter-rooms" class="block text-sm font-medium text-primary">Habitaciones (mín.)</label>
+                                    <select id="filter-rooms" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md focus:ring-primary focus:border-primary transition duration-150">
+                                        <option value="0">Cualquiera</option>
+                                        <option value="1">1+</option>
+                                        <option value="2">2+</option>
+                                        <option value="3">3+</option>
+                                        <option value="4">4+</option>
+                                    </select>
+                                </div>
+
+                                <div>
+                                    <label for="search-text" class="block text-sm font-medium text-primary">Búsqueda Rápida (Texto)</label>
+                                    <input type="text" id="search-text" placeholder="Ref, Título o Descripción" class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 rounded-md shadow-sm focus:ring-primary focus:border-primary transition duration-150">
+                                </div>
+                            </div>
+                            <div class="mt-6 flex justify-end">
+                                <button onclick="filterProperties()" class="px-6 py-2 border border-transparent text-sm font-bold rounded-full text-white bg-secondary hover:bg-primary transition duration-300 shadow-md transform hover:scale-105">
+                                    Buscar Oportunidades
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Grid de Propiedades -->
+                        <div id="properties-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                            <!-- Fichas de Propiedades se inyectarán aquí -->
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 3. Sección Sobre mí -->
+                <section id="sobre-mi" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+                        <!-- Foto del Agente (Placeholder) con efecto de elevación -->
+                        <div class="relative w-full h-96 bg-primary rounded-xl overflow-hidden shadow-2xl transition duration-500 transform hover:scale-[1.02] hover:shadow-3xl border-4 border-secondary">
+                            <div class="absolute inset-0 flex flex-col items-center justify-center text-white text-lg font-bold">
+                                
+                                <p class="text-sm mt-2 font-light">Asesor Certificado en Estrategia Digital</p>
+                            </div>
+                        </div>
+                        <!-- Texto y Bio -->
+                        <div>
+                            <h2 class="text-sm font-extrabold uppercase tracking-wider text-secondary mb-2">Mi Visión y Trayectoria</h2>
+                            <h3 class="text-4xl md:text-5xl font-extrabold text-primary mb-6 leading-tight">Lucas Quiroga: Experto en Real Estate con Tecnología</h3>
+                            
+                            <div class="space-y-6 text-lg text-gray-700">
+                                <p>
+                                    Soy **Lucas Gabriel Quiroga**, un agente inmobiliario con un **compromiso inquebrantable con la excelencia y la innovación**. Mi experiencia se centra en aplicar estrategias digitales para superar las expectativas tradicionales del mercado.
+                                </p>
+                                <p>
+                                    En InmoDigitalStudio, la **confianza, la transparencia y la tecnología** son mis pilares. No busco transacciones rápidas, busco **conexiones duraderas y oportunidades de inversión sólidas**, simplificando el proceso para ti con herramientas digitales de alta precisión.
+                                </p>
+                            </div>
+                            
+                            <!-- Enlaces a Redes Sociales con efecto -->
+                            <div class="mt-8 flex space-x-6">
+                                <a href="https://www.facebook.com/LucasQuirogaRealState" target="_blank" rel="noopener noreferrer" class="text-primary hover:text-secondary transition duration-300 transform hover:scale-110">
+                                    <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M19 0H5C2.243 0 0 2.243 0 5v14c0 2.757 2.243 5 5 5h7.584V14.71h-2.534v-2.91h2.534V9.582c0-2.502 1.492-3.882 3.754-3.882 1.077 0 2.244.195 2.244.195v2.464h-1.268c-1.242 0-1.637.772-1.637 1.574v1.884h2.785l-.446 2.91h-2.339V24H19c2.757 0 5-2.243 5-5V5c0-2.757-2.243-5-5-5z"/></svg>
+                                </a>
+                                <a href="https://www.instagram.com/lquiroga_realstate" target="_blank" rel="noopener noreferrer" class="text-primary hover:text-secondary transition duration-300 transform hover:scale-110">
+                                    <svg class="w-7 h-7" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.163c3.204 0 3.584.013 4.85.071 4.205.198 6.136 2.13 6.326 6.326.058 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.198 4.205-2.13 6.136-6.326 6.326-1.266.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-4.205-.198-6.136-2.13-6.326-6.326-.058-1.266-.07-1.646-.07-4.85s.012-3.584.07-4.85c.198-4.205 2.13-6.136 6.326-6.326 1.266-.058 1.646-.07 4.85-.07zm0-2.163c-3.259 0-3.666.013-4.945.074-4.402.206-7.398 3.203-7.604 7.604-.061 1.28-.073 1.686-.073 4.945s.012 3.666.073 4.945c.206 4.402 3.203 7.398 7.604 7.604 1.28.061 1.686.073 4.945.073s3.666-.012 4.945-.073c4.402-.206 7.398-3.203 7.604-7.604.061-1.28.073-1.686.073-4.945s-.012-3.666-.073-4.945c-.206-4.402-3.203-7.398-7.604-7.604-1.28-.061-1.686-.073-4.945-.073zM12 5.837c-3.41 0-6.163 2.753-6.163 6.163s2.753 6.163 6.163 6.163 6.163-2.753 6.163-6.163c0-3.41-2.753-6.163-6.163-6.163zm0 10.163c-2.208 0-4-1.792-4-4s1.792-4 4-4 4 1.792 4 4-1.792 4-4 4zm6.406-11.845c-.796 0-1.442.646-1.442 1.442s.646 1.442 1.442 1.442 1.442-.646 1.442-1.442-.646-1.442-1.442-1.442z"/></svg>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 4. Sección de Contacto -->
+                <section id="contacto" class="bg-primary py-16 md:py-24">
+                    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+                        <h2 class="text-3xl md:text-4xl font-extrabold text-white mb-4 text-center">Asesoría Inmediata: Conecta con el Experto</h2>
+                        <p class="text-center text-lg text-gray-300 mb-12">
+                            Te ofrezco una línea directa para todas tus consultas. Hablemos de tus objetivos inmobiliarios hoy mismo.
+                        </p>
+
+                        <div class="bg-white p-8 md:p-12 rounded-xl shadow-2xl border-t-4 border-secondary transition duration-500 transform hover:shadow-3xl">
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
+                                <!-- Formulario de Contacto (Simulado) -->
+                                <form id="contact-form" class="space-y-6">
+                                    <div><input type="text" id="name" name="name" placeholder="Tu Nombre" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-secondary focus:border-secondary"></div>
+                                    <div><input type="email" id="email" name="email" placeholder="Tu Email" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-secondary focus:border-secondary"></div>
+                                    <div><textarea id="message" name="message" rows="4" placeholder="Consulta Específica" required class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:ring-secondary focus:border-secondary"></textarea></div>
+                                    <button type="submit" class="w-full inline-flex justify-center items-center px-4 py-3 border border-transparent text-base font-bold rounded-full text-white bg-secondary hover:bg-primary transition duration-300 shadow-md transform hover:scale-[1.02]">
+                                        Enviar Consulta al Experto
+                                    </button>
+                                    <div id="form-message" class="mt-4 text-center text-sm font-bold hidden"></div>
+                                    <script>
+                                        // Simulación de envío de formulario para evitar errores
+                                        document.getElementById('contact-form').addEventListener('submit', function(e) {
+                                            e.preventDefault();
+                                            const messageEl = document.getElementById('form-message');
+                                            messageEl.textContent = 'Gracias por tu consulta. Lucas te contactará en breve.';
+                                            messageEl.classList.remove('hidden');
+                                            messageEl.classList.remove('text-red-500');
+                                            messageEl.classList.add('text-green-500');
+                                            this.reset();
+                                            setTimeout(() => messageEl.classList.add('hidden'), 5000);
+                                        });
+                                    </script>
+                                </form>
+
+                                <!-- Contacto Directo y Mapa -->
+                                <div class="space-y-8">
+                                    <h4 class="text-xl font-bold text-primary border-b pb-2">Canales Directos</h4>
+                                    <div class="space-y-4">
+                                        <p class="text-lg text-gray-700">
+                                            <span class="font-bold block">Correo Profesional:</span> quirogalucas_realstate@gmail.com
+                                        </p>
+                                        <p class="text-lg text-gray-700">
+                                            <span class="font-bold block">Teléfono:</span> +54 9 223 685-9865
+                                        </p>
+                                    </div>
+                                    
+                                    <!-- Mapa de Google (Placeholder) -->
+                                    <div class="h-48 w-full bg-gray-100 rounded-xl overflow-hidden shadow-inner flex items-center justify-center border border-gray-300">
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            <!-- Footer -->
+            <footer class="bg-gray-800 text-white mt-0">
+                <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+                    <p class="text-lg font-bold text-secondary mb-2">InmoDigitalStudio</p>
+                    <div class="text-sm text-gray-400">
+                        <p>&copy; 2025 InmoDigitalStudio. Estrategia y Tecnología por Lucas Gabriel Quiroga.</p>
+                        <p class="mt-1">Agente: Lucas Gabriel Quiroga | Email: quirogalucas_realstate@gmail.com</p>
+                    </div>
+                </div>
+            </footer>
+            
+            <!-- Botón Flotante de WhatsApp (Fijo con efecto) -->
+            <a href="https://wa.me/5492236859865?text=Hola%20Lucas%2C%20estoy%20interesado%20en%20una%20propiedad%20que%20vi%20en%20tu%20web%20y%20requiero%20asesoría." target="_blank" class="fixed right-6 bottom-6 p-4 bg-green-500 rounded-full shadow-xl hover:bg-green-600 transition duration-300 transform hover:scale-110 animate-bounce z-[999]">
+                <!-- Icono de WhatsApp -->
+                <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.477 2 2 6.477 2 12c0 3.864 2.057 7.23 5.143 8.977l-.607 1.764c-.11.32.186.634.502.482l1.983-.984c.83.216 1.71.323 2.61.323 5.523 0 10-4.477 10-10S17.523 2 12 2zm3.328 12.822c-.104-.26-.376-.416-.653-.416-.08 0-.156.012-.232.036-.312.096-.948.336-1.284.384-.336.048-.684.096-1.044.048-.36-.048-.712-.192-1.056-.48-.344-.288-.668-.672-1.032-1.164-.364-.492-.704-1.128-1.04-1.776-.336-.648-.668-1.392-.668-2.148 0-.756.28-1.428.484-1.748.204-.32.508-.488.752-.488h.276c.244 0 .496.06.72.604.224.544.508 1.252.548 1.352.04.1.04.22-.024.364-.064.144-.316.332-.472.488-.156.156-.304.348-.388.452-.084.104-.156.248-.04.48.116.232.496.792.812 1.108.316.316.712.596 1.108.736.396.14.78.204 1.12.184.34-.02.768-.276 1.108-.348.34-.072.712-.04 1.056.096.344.136.656.332.916.592.26.26.472.584.588.944.116.36.16.748.096 1.136-.064.388-.24.776-.56 1.052z"/></svg>
+            </a>
+
+            <!-- Modal de Detalles de Propiedad -->
+            <div id="property-detail-modal" onclick="if(event.target.id === 'property-detail-modal') closeDetailModal()" class="hidden fixed inset-0 z-[10000] bg-gray-900 bg-opacity-80 flex items-center justify-center p-4">
+                <div class="bg-white rounded-xl max-w-5xl w-full max-h-[90vh] overflow-hidden shadow-2xl relative">
+                    <!-- Botón de Cerrar -->
+                    <button onclick="closeDetailModal()" class="absolute top-4 right-4 text-white bg-red-500 hover:bg-red-600 p-2 rounded-full transition z-[1001] transform hover:scale-110">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    </button>
+
+                    <div class="overflow-y-auto max-h-[90vh]">
+                        <div class="grid grid-cols-1 md:grid-cols-2">
+                            
+                            <!-- Columna de Imagen y Galería de Miniaturas -->
+                            <div class="relative p-4">
+                                <!-- Main Image Display -->
+                                <div class="h-96 w-full rounded-xl overflow-hidden shadow-xl mb-4 border-2 border-gray-200">
+                                    <img id="modal-detail-main-image" src="" alt="Imagen principal de la propiedad" class="w-full h-full object-cover transition-all duration-300">
+                                </div>
+                                <!-- Thumbnails Gallery -->
+                                <div id="modal-detail-gallery" class="grid grid-cols-3 gap-3">
+                                    <!-- Thumbnails inyectados por JS -->
+                                </div>
+                            </div>
+
+                            <!-- Columna de Contenido -->
+                            <div class="p-6 md:p-8 space-y-6">
+                                <h1 id="modal-detail-title" class="text-3xl font-extrabold text-primary"></h1>
+                                
+                                <div class="flex justify-between items-center border-b pb-4">
+                                    <p id="modal-detail-price" class="text-4xl font-extrabold text-secondary"></p>
+                                    <p id="modal-detail-ref" class="text-sm font-semibold text-gray-500"></p>
+                                </div>
+
+                                <!-- Datos Clave -->
+                                <div class="grid grid-cols-2 gap-4 text-gray-700">
+                                    <p><span class="font-bold text-primary">Ubicación:</span> <span id="modal-detail-location"></span></p>
+                                    <p><span class="font-bold text-primary">Tipo:</span> <span id="modal-detail-type"></span></p>
+                                    <p><span class="font-bold text-primary">Habitaciones:</span> <span id="modal-detail-rooms"></span></p>
+                                    <p><span class="font-bold text-primary">Área:</span> <span id="modal-detail-area"></span></p>
+                                    <p class="col-span-2"><span class="font-bold text-primary">Estado:</span> <span id="modal-detail-status" class="font-semibold text-secondary"></span></p>
+                                </div>
+
+                                <!-- Descripción Completa -->
+                                <div class="pt-4 border-t">
+                                    <h4 class="text-xl font-bold text-primary mb-2">Descripción Detallada</h4>
+                                    <p id="modal-detail-description" class="text-gray-600 leading-relaxed whitespace-pre-wrap"></p>
+                                </div>
+
+                                <!-- Botón de Contacto -->
+                                <a id="modal-detail-whatsapp" href="#" target="_blank" class="w-full mt-6 inline-flex justify-center items-center px-6 py-3 border border-transparent text-lg font-bold rounded-full text-white bg-green-500 hover:bg-green-600 transition duration-300 shadow-xl transform hover:scale-[1.02]">
+                                    <svg class="w-5 h-5 mr-3" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.477 2 2 6.477 2 12c0 3.864 2.057 7.23 5.143 8.977l-.607 1.764c-.11.32.186.634.502.482l1.983-.984c.83.216 1.71.323 2.61.323 5.523 0 10-4.477 10-10S17.523 2 12 2zm3.328 12.822c-.104-.26-.376-.416-.653-.416-.08 0-.156.012-.232.036-.312.096-.948.336-1.284.384-.336.048-.684.096-1.044.048-.36-.048-.712-.192-1.056-.48-.344-.288-.668-.672-1.032-1.164-.364-.492-.704-1.128-1.04-1.776-.336-.648-.668-1.392-.668-2.148 0-.756.28-1.428.484-1.748.204-.32.508-.488.752-.488h.276c.244 0 .496.06.72.604.224.544.508 1.252.548 1.352.04.1.04.22-.024.364-.064.144-.316.332-.472.488-.156.156-.304.348-.388.452-.084.104-.156.248-.04.48.116.232.496.792.812 1.108.316.316.712.596 1.108.736.396.14.78.204 1.12.184.34-.02.768-.276 1.108-.348.34-.072.712-.04 1.056.096.344.136.656.332.916.592.26.26.472.584.588.944.116.36.16.748.096 1.136-.064.388-.24.776-.56 1.052z"/></svg>
+                                    Contactar a Lucas por WhatsApp
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    
 </body>
 </html>
